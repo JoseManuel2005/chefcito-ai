@@ -1,4 +1,6 @@
-export default function Home() {
+import GoogleSignInButton from "@/components/GoogleSiginButton";
+
+export default function LoginPage() {
   return (
     <main className="flex flex-col lg:flex-row min-h-screen font-sans">
       {/* Sección Izquierda */}
@@ -17,7 +19,7 @@ export default function Home() {
         <div className="bg-white rounded-2xl p-6 sm:p-8 lg:p-12 shadow-[0_16px_48px_rgba(0,0,0,0.28)] text-center max-w-[400px] w-full mx-4">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#333] mb-4 lg:mb-5">¡Bienvenido!</h2>
           <p className="text-base sm:text-lg text-[#666] mb-6 lg:mb-10 leading-relaxed">Inicia sesión para comenzar</p>
-          <button
+          {/* <button
             className="w-full bg-[#ffd700] text-[#333] font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl flex items-center justify-center gap-3 mb-6 lg:mb-8 transition-all duration-300 hover:bg-[#ffcc00] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] text-sm sm:text-base"
             aria-label="Continuar con Google"
           >
@@ -28,7 +30,8 @@ export default function Home() {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continuar con Google
-          </button>
+          </button> */}
+          <GoogleSignInButton />
           <p className="text-xs sm:text-sm text-[#999] leading-snug mb-0 px-2">
             Al continuar, se creará tu cuenta automáticamente si es tu primera vez
           </p>
