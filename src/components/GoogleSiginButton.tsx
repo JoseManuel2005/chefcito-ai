@@ -1,65 +1,52 @@
-// // components/GoogleSignInButton.tsx
-// 'use client';
-
-// import React, { useState } from 'react';
-// import { signInWithGoogle } from '@/lib/firebaseClient';
-// import { useRouter } from 'next/navigation';
-
-// export default function GoogleSignInButton({ className = '' }: { className?: string }) {
-//   const router = useRouter();
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-
-//   async function handleClick() {
-//     setLoading(true);
-//     setError(null);
-//     try {
-//       const user = await signInWithGoogle();
-//       // user ya está logueado en cliente; redirige a dashboard (o donde quieras)
-//       router.push('/dashboard');
-//     } catch (err: any) {
-//       console.error('Error al iniciar con Google:', err);
-//       setError(err.message || 'Error desconocido');
-//     } finally {
-//       setLoading(false);
-//     }
-//   }
-
-//   return (
-//     <div>
-//       <button
-//         aria-label="Continuar con Google"
-//         className={className}
-//         onClick={handleClick}
-//         disabled={loading}
-//       >
-//         {/* Puedes pegar el SVG que ya tienes */}
-//         {loading ? 'Iniciando...' : 'Continuar con Google'}
-//       </button>
-//       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-//     </div>
-//   );
-// }
-
-
+ 
 'use client';
 
 import { useState } from 'react';
 import { signInWithGoogle } from '@/lib/firebaseClient'; // función que definimos en lib/firebaseClient.ts
 import { useRouter } from 'next/navigation';
 
+
+import toast from 'react-hot-toast';
+
+
 export default function GoogleSignInButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  async function handleClick() {
+  // async function handleClick() {
+  //   try {
+  //     setLoading(true);
+  //     await signInWithGoogle();
+  //     router.push('/ejemploInicio'); // cambia a la ruta que quieras después de login
+  //   } catch (error) {
+  //     console.error('Error al iniciar sesión con Google:', error);
+  //     alert('No se pudo iniciar sesión. Intenta de nuevo.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
+ async function handleClick() {
     try {
       setLoading(true);
-      await signInWithGoogle();
-      router.push('/ejemploInicio'); // cambia a la ruta que quieras después de login
+      const { user, isNew, error } = await signInWithGoogle();
+
+      if (error) {
+        toast.error("No se pudo iniciar sesión. Intenta de nuevo.");
+        return;
+      }
+
+      // 👇 mensaje según el caso
+      if (isNew) {
+        toast.success(`¡Bienvenido por primera vez, ${user?.displayName || "Chef"}! 🥳`);
+      } else {
+        toast.success(`¡Bienvenido de nuevo, ${user?.displayName || "Chef"}! 👋`);
+      }
+
+      router.push('/ejemploInicio'); // redirección
     } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
-      alert('No se pudo iniciar sesión. Intenta de nuevo.');
+      toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -97,3 +84,6 @@ export default function GoogleSignInButton() {
     </button>
   );
 }
+
+
+
