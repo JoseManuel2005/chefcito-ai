@@ -39,11 +39,13 @@ export default function GoogleSignInButton() {
       // 👇 mensaje según el caso
       if (isNew) {
         toast.success(`¡Bienvenido por primera vez, ${user?.displayName || "Chef"}! 🥳`);
+        router.push('/onboarding'); // redirige al onboarding si es nuevo
       } else {
         toast.success(`¡Bienvenido de nuevo, ${user?.displayName || "Chef"}! 👋`);
+        router.push('/ejemploInicio'); // redirige al home si ya es usuario existente
       }
 
-      router.push('/ejemploInicio'); // redirección
+      // router.push('/ejemploInicio'); // redirección
     } catch (error) {
       toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
       console.error(error);
