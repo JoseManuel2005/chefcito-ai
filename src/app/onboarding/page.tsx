@@ -104,7 +104,7 @@ export default function OnboardingPage() {
       { merge: true }
     );
 
-    router.push("/ejemploInicio");
+    router.push("/principal");
   };
 
   const cuisines = [
