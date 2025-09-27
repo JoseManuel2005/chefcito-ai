@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Utensils, 
   BookOpen, 
@@ -10,62 +10,170 @@ import {
   Search,
   Clock,
   Users,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from "lucide-react";
+import { auth, db } from "@/lib/firebaseClient";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function PrincipalPage() {
   const [mode, setMode] = useState<"ingredients" | "recipe" | null>(null);
-  const [ingredients, setIngredients] = useState<string[]>([""]);
+  const [ingredients, setIngredients] = useState<{ name: string; expiry?: string | null }[]>([{ name: "" }]);
   const [recipe, setRecipe] = useState("");
   const [recipes, setRecipes] = useState<any[]>([]);
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  
+  // 👇 Estado para las preferencias del usuario
+  const [userPreferences, setUserPreferences] = useState<{
+    allergies: string[];
+    preferredCuisines: string[];
+    country: string;
+  } | null>(null);
 
-  // Agregar nuevo ingrediente
+  // 👇 Cargar preferencias del usuario al montar el componente
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserPreferences({
+            allergies: data.allergies || [],
+            preferredCuisines: data.preferredCuisines || [],
+            country: data.country || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error al cargar preferencias del usuario:", error);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      // Cargar foto de perfil
+      setUserPhoto(user.photoURL);
+
+      // Cargar preferencias
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserPreferences({
+            allergies: data.allergies || [],
+            preferredCuisines: data.preferredCuisines || [],
+            country: data.country || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error al cargar preferencias:", error);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // ✅ Agregar nuevo ingrediente (limpia resultados y advertencias)
   const handleAddIngredient = () => {
-    setIngredients([...ingredients, ""]);
+    setWarningMessage(null);
+    setRecipes([]);
+    setIngredients([...ingredients, { name: "", expiry: null }]);
   };
 
-  // Cambiar valor de ingrediente
-  const handleChangeIngredient = (value: string, index: number) => {
+  // ✅ Actualizar nombre (limpia resultados y advertencias)
+  const handleChangeIngredientName = (value: string, index: number) => {
+    setWarningMessage(null);
+    setRecipes([]);
     const updated = [...ingredients];
-    updated[index] = value;
+    updated[index] = { ...updated[index], name: value };
     setIngredients(updated);
   };
 
-  // Eliminar ingrediente
+  // ✅ Actualizar fecha (limpia resultados y advertencias)
+  const handleChangeIngredientExpiry = (value: string, index: number) => {
+    setWarningMessage(null);
+    setRecipes([]);
+    const updated = [...ingredients];
+    updated[index] = { ...updated[index], expiry: value || null };
+    setIngredients(updated);
+  };
+
+  // ✅ Eliminar ingrediente (limpia resultados y advertencias)
   const handleRemoveIngredient = (index: number) => {
+    setWarningMessage(null);
+    setRecipes([]);
     if (ingredients.length > 1) {
       setIngredients(ingredients.filter((_, i) => i !== index));
     }
   };
 
-  // Buscar recetas por ingredientes
+  // Helper para días hasta vencimiento (solo para UI)
+  const getDaysUntilExpiry = (expiryDate: string | null): number | null => {
+    if (!expiryDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Buscar recetas → ✅ AHORA INCLUYE userPreferences
   const handleSearchRecipes = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validIngredients = ingredients.filter((ing) => ing.trim() !== "");
+    const validIngredients = ingredients.filter((ing) => ing.name.trim() !== "");
     if (validIngredients.length === 0) return;
 
     setLoading(true);
     setRecipes([]);
+    setWarningMessage(null);
 
     try {
+      const payload = {
+        ingredients: validIngredients.map(ing => ({
+          name: ing.name.trim(),
+          expiry: ing.expiry
+        })),
+        // 👇 Enviamos las preferencias del usuario
+        userPreferences: userPreferences || {
+          allergies: [],
+          preferredCuisines: [],
+          country: ""
+        }
+      };
+
       const response = await fetch("/api/recipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: validIngredients }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
       setRecipes(data.recipes || []);
+      if (data.warning) {
+        setWarningMessage(data.warning);
+      }
     } catch (error) {
       console.error("Error:", error);
+      setWarningMessage("Hubo un error al generar las recetas. Por favor, intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Analizar receta
+  // Analizar receta (sin cambios, no necesita preferencias)
   const handleAnalyzeRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipe.trim()) return;
@@ -92,10 +200,11 @@ export default function PrincipalPage() {
   // Resetear modo
   const handleResetMode = () => {
     setMode(null);
-    setIngredients([""]);
+    setIngredients([{ name: "" }]);
     setRecipe("");
     setRecipes([]);
     setAnalysis(null);
+    setWarningMessage(null);
   };
 
   return (
@@ -198,26 +307,58 @@ export default function PrincipalPage() {
 
             <form onSubmit={handleSearchRecipes} className="space-y-6">
               <div className="space-y-3">
-                {ingredients.map((ingredient, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      value={ingredient}
-                      onChange={(e) => handleChangeIngredient(e.target.value, index)}
-                      className="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-black focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors"
-                      placeholder="Ej: tomate, cebolla, pollo..."
-                    />
-                    {ingredients.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveIngredient(index)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {ingredients.map((ingredient, index) => {
+                  const daysUntil = getDaysUntilExpiry(ingredient.expiry);
+                  const isExpiringSoon = daysUntil !== null && daysUntil <= 2;
+                  const isExpired = daysUntil !== null && daysUntil < 0;
+                  
+                  return (
+                    <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <input
+                        type="text"
+                        value={ingredient.name}
+                        onChange={(e) => handleChangeIngredientName(e.target.value, index)}
+                        className="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-black focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors"
+                        placeholder="Ej: tomate, cebolla, pollo..."
+                      />
+                      
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:flex-none">
+                          <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="date"
+                            value={ingredient.expiry || ""}
+                            onChange={(e) => handleChangeIngredientExpiry(e.target.value, index)}
+                            className="w-full sm:w-48 pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-black focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors"
+                            aria-label="Fecha de vencimiento (opcional)"
+                          />
+                        </div>
+                        
+                        {isExpiringSoon && (
+                          <span 
+                            className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                              isExpired 
+                                ? "bg-red-100 text-red-700" 
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {isExpired ? "Vencido" : `Vence en ${daysUntil} días`}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {ingredients.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveIngredient(index)}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors self-start sm:self-center"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
 
                 <button
                   type="button"
@@ -231,7 +372,7 @@ export default function PrincipalPage() {
 
               <button
                 type="submit"
-                disabled={loading || ingredients.every(ing => ing.trim() === "")}
+                disabled={loading || ingredients.every(ing => ing.name.trim() === "")}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -304,6 +445,16 @@ export default function PrincipalPage() {
                 )}
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Advertencia visible */}
+        {warningMessage && (
+          <div className="mb-8">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-700 font-medium">{warningMessage}</p>
+            </div>
           </div>
         )}
 
@@ -407,6 +558,88 @@ export default function PrincipalPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* 👤 Avatar de usuario con menú de preferencias */}
+      <div className="fixed top-6 right-6 z-10">
+        <button
+          onClick={() => setShowPreferences(!showPreferences)}
+          className="w-10 h-10 rounded-full overflow-hidden shadow-sm border-2 border-white hover:ring-2 hover:ring-yellow-300 transition-all"
+          aria-label="Tus preferencias"
+        >
+          {userPhoto ? (
+            <img
+              src={userPhoto}
+              alt="Tu avatar"
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white font-medium">
+              {auth.currentUser?.displayName?.charAt(0).toUpperCase() || "?"}
+            </div>
+          )}
+        </button>
+        
+        {/* Panel flotante de preferencias */}
+        {showPreferences && (
+          <div className="absolute top-12 right-0 w-64 bg-white rounded-xl shadow-lg border border-gray-100 p-4 mt-2 z-20">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-gray-900 text-sm">Tus preferencias</h4>
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+  {userPhoto ? (
+    <img src={userPhoto} alt="" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
+  ) : (
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white text-xs font-medium">
+      {auth.currentUser?.displayName?.charAt(0).toUpperCase() || "?"}
+    </div>
+  )}
+  <span className="text-sm font-medium text-gray-900">
+    {auth.currentUser?.displayName || "Usuario"}
+  </span>
+</div>
+              <button
+                onClick={() => setShowPreferences(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+        
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-gray-500 font-medium">Alergias</p>
+                <p className="text-gray-800">
+                  {userPreferences?.allergies.length ? userPreferences.allergies.join(", ") : "Ninguna"}
+                </p>
+              </div>
+        
+              <div>
+                <p className="text-gray-500 font-medium">Cocinas favoritas</p>
+                <p className="text-gray-800">
+                  {userPreferences?.preferredCuisines.length ? userPreferences.preferredCuisines.join(", ") : "Ninguna"}
+                </p>
+              </div>
+        
+              <div>
+                <p className="text-gray-500 font-medium">País</p>
+                <p className="text-gray-800">
+                  {userPreferences?.country || "No especificado"}
+                </p>
+              </div>
+            </div>
+        
+            <button
+              onClick={() => {
+                setShowPreferences(false);
+                // router.push("/onboarding"); // descomenta si quieres redirigir
+              }}
+              className="mt-4 w-full py-2 text-xs text-yellow-600 font-medium bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
+            >
+              Editar preferencias
+            </button>
           </div>
         )}
       </div>
