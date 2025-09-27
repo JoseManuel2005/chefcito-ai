@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Utensils, 
   BookOpen, 
@@ -17,6 +18,7 @@ import { auth, db } from "@/lib/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function PrincipalPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<"ingredients" | "recipe" | null>(null);
   const [ingredients, setIngredients] = useState<{ name: string; expiry?: string | null }[]>([{ name: "" }]);
   const [recipe, setRecipe] = useState("");
@@ -588,18 +590,6 @@ export default function PrincipalPage() {
           <div className="absolute top-12 right-0 w-64 bg-white rounded-xl shadow-lg border border-gray-100 p-4 mt-2 z-20">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold text-gray-900 text-sm">Tus preferencias</h4>
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-  {userPhoto ? (
-    <img src={userPhoto} alt="" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
-  ) : (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white text-xs font-medium">
-      {auth.currentUser?.displayName?.charAt(0).toUpperCase() || "?"}
-    </div>
-  )}
-  <span className="text-sm font-medium text-gray-900">
-    {auth.currentUser?.displayName || "Usuario"}
-  </span>
-</div>
               <button
                 onClick={() => setShowPreferences(false)}
                 className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
@@ -634,7 +624,7 @@ export default function PrincipalPage() {
             <button
               onClick={() => {
                 setShowPreferences(false);
-                // router.push("/onboarding"); // descomenta si quieres redirigir
+                router.push("/onboarding");
               }}
               className="mt-4 w-full py-2 text-xs text-yellow-600 font-medium bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
             >
