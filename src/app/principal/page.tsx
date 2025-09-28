@@ -498,7 +498,7 @@ export default function PrincipalPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        30-45 min
+                        {recipeItem.tiempo || "Tiempo no estimado"}
                       </div>
                     </div>
                   </div>
@@ -547,7 +547,10 @@ export default function PrincipalPage() {
                 <h4 className="text-xl font-semibold text-gray-900 mb-2">
                   {analysis.receta || "Análisis de receta"}
                 </h4>
-                <p className="text-gray-600">Ingredientes necesarios</p>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>{analysis.tiempo || "Tiempo no estimado"}</span>
+                </div>
               </div>
             </div>
 

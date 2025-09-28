@@ -100,6 +100,7 @@ Ingredientes disponibles para usar (todos están en buen estado):
 
 Genera hasta 2 recetas cortas, realistas, seguras y deliciosas usando SOLO los ingredientes disponibles.
 Puedes usar solo un ingrediente si es necesario.
+Para cada receta, estima un tiempo de preparación REALISTA en minutos (ej: "15-20 minutos", "45-60 minutos").
 Si no es posible crear recetas útiles, devuelve un array vacío [].
 
 Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown):
@@ -107,7 +108,8 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
   {
     "nombre": "Nombre de la receta",
     "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-    "pasos": ["Paso 1", "Paso 2", ...]
+    "pasos": ["Paso 1", "Paso 2", ...],
+    "tiempo": "25-30 minutos"
   }
 ]`;
 
@@ -142,7 +144,7 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
     if (recipe && typeof recipe === "string") {
       // Construir contexto del usuario para el análisis
       let userContext = "";
-      
+
       if (allergies.length > 0) {
         userContext += `El usuario tiene alergias a: ${allergies.join(", ")}. NO incluyas ni sugieras ingredientes que contengan estos alérgenos. `;
       }
@@ -160,14 +162,15 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
       }
     
       const prompt = `Eres un experto en cocina y nutrición.
-    ${userContext}
-    
-    Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
-    {
-      "receta": "Nombre de la receta",
-      "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-      "comentario": "Notas útiles: ¿faltan ingredientes comunes? ¿hay sustituciones por alergias o región? ¿se adapta a sus preferencias?"
-    }`;
+${userContext}
+
+Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
+{
+  "receta": "Nombre de la receta",
+  "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+  "tiempo": "30-40 minutos",
+  "comentario": "Notas útiles: ¿faltan ingredientes comunes? ¿hay sustituciones por alergias o región? ¿se adapta a sus preferencias?"
+}`;
     
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
