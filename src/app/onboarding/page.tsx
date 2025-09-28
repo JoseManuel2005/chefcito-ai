@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebaseClient";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   ChefHat, Plus, X,
   ArrowLeft,
@@ -33,7 +33,48 @@ export default function OnboardingPage() {
   const [customCuisines, setCustomCuisines] = useState<string[]>([""]);
   const [country, setCountry] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // 👇 Cargar datos existentes al montar
+  useEffect(() => {
+    const loadExistingData = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          
+          // Alergias
+          const existingAllergies = data.allergies || [""];
+          setAllergies(existingAllergies.length > 0 ? existingAllergies : [""]);
+
+          // Cocinas predefinidas y personalizadas
+          const allCuisines = data.preferredCuisines || [];
+          const predefined = cuisines.map(c => c.name);
+          const existingPredefined = allCuisines.filter(c => predefined.includes(c));
+          const existingCustom = allCuisines.filter(c => !predefined.includes(c));
+
+          setPreferredCuisines(existingPredefined);
+          setCustomCuisines(existingCustom.length > 0 ? existingCustom : [""]);
+
+          // País
+          setCountry(data.country || "");
+        }
+      } catch (error) {
+        console.error("Error al cargar datos existentes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingData();
+  }, [router]);
 
   // Agregar un nuevo input de alergia
   const handleAddAllergyInput = () => {
@@ -104,7 +145,7 @@ export default function OnboardingPage() {
       { merge: true }
     );
 
-    router.push("/ejemploInicio");
+    router.push("/principal");
   };
 
   const cuisines = [
@@ -132,6 +173,20 @@ export default function OnboardingPage() {
     "Ecuador",
     "Venezuela"
   ];
+
+  // 👇 Agrega un estado de loading al inicio
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-4xl mb-5">
+            <ChefHat className="w-8 h-8 text-white animate-pulse" />
+          </div>
+          <p className="text-gray-600">Cargando tu perfil...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white flex items-center justify-center p-6">
