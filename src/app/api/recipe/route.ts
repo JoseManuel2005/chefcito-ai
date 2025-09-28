@@ -2,7 +2,48 @@
 import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
 
+// 🔒 RATE LIMITING (solo para MVP - en memoria)
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+const MAX_REQUESTS = 5; // máximo 5 peticiones por minuto
+const WINDOW_MS = 60 * 1000; // 1 minuto
+
+function getIP(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  return forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+}
+
 export async function POST(req: Request) {
+  // 👇 --- RATE LIMITING AL INICIO DE LA FUNCIÓN ---
+  const ip = getIP(req);
+  const now = Date.now();
+
+  // Limpieza opcional (cada 10 peticiones)
+  if (Math.random() < 0.1) {
+    for (const [key, value] of requestCounts.entries()) {
+      if (now > value.resetTime) requestCounts.delete(key);
+    }
+  }
+
+  let ipData = requestCounts.get(ip);
+  if (!ipData) {
+    ipData = { count: 0, resetTime: now + WINDOW_MS };
+    requestCounts.set(ip, ipData);
+  }
+
+  if (now > ipData.resetTime) {
+    ipData.count = 0;
+    ipData.resetTime = now + WINDOW_MS;
+  }
+
+  if (ipData.count >= MAX_REQUESTS) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Por favor, espera 1 minuto." },
+      { status: 429 }
+    );
+  }
+
+  ipData.count++;
+
   try {
     const body = await req.json();
     const { ingredients, recipe, userPreferences } = body;
