@@ -138,28 +138,49 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
       return NextResponse.json({ recipes, warning });
     }
 
-    // === MODO 2: Receta → Ingredientes (sin personalización por ahora) ===
+    // === MODO 2: Receta → Ingredientes (CON preferencias del usuario) ===
     if (recipe && typeof recipe === "string") {
-      const prompt = `Analiza la receta llamada "${recipe}".
-Devuelve SOLO un JSON con este formato:
-{
-  "receta": "...",
-  "ingredientes": ["...", "..."],
-  "comentario": "Indica si faltan ingredientes comunes que no se mencionaron"
-}`;
-
+      // Construir contexto del usuario para el análisis
+      let userContext = "";
+      
+      if (allergies.length > 0) {
+        userContext += `El usuario tiene alergias a: ${allergies.join(", ")}. NO incluyas ni sugieras ingredientes que contengan estos alérgenos. `;
+      }
+    
+      if (country) {
+        userContext += `El usuario está en ${country}. Adapta los ingredientes a lo que es común o disponible en esa región (ej: usa nombres locales si aplica). `;
+      }
+    
+      if (preferredCuisines.length > 0) {
+        userContext += `El usuario prefiere la cocina: ${preferredCuisines.join(", ")}. Si la receta se puede adaptar a estos estilos, menciónalo en el comentario. `;
+      }
+    
+      if (!userContext) {
+        userContext = "No hay preferencias específicas del usuario. ";
+      }
+    
+      const prompt = `Eres un experto en cocina y nutrición.
+    ${userContext}
+    
+    Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
+    {
+      "receta": "Nombre de la receta",
+      "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+      "comentario": "Notas útiles: ¿faltan ingredientes comunes? ¿hay sustituciones por alergias o región? ¿se adapta a sus preferencias?"
+    }`;
+    
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       });
-
+    
       const rawText = completion.choices[0]?.message?.content ?? "";
       const cleaned = rawText
         .replace(/```json/g, "")
         .replace(/```/g, "")
         .trim();
-
+    
       let result;
       try {
         const match = cleaned.match(/\{[\s\S]*\}/);
@@ -169,9 +190,13 @@ Devuelve SOLO un JSON con este formato:
           result = JSON.parse(cleaned);
         }
       } catch {
-        result = { receta: recipe, comentario: "No se pudo analizar la receta" };
+        result = { 
+          receta: recipe, 
+          ingredientes: [],
+          comentario: "No se pudo analizar la receta. Verifica el nombre e intenta de nuevo." 
+        };
       }
-
+    
       return NextResponse.json({ analysis: result });
     }
 

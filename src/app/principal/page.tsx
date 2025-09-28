@@ -175,25 +175,40 @@ export default function PrincipalPage() {
     }
   };
 
-  // Analizar receta (sin cambios, no necesita preferencias)
+  // Analizar receta → ✅ AHORA INCLUYE userPreferences
   const handleAnalyzeRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipe.trim()) return;
-
+  
     setLoading(true);
     setAnalysis(null);
-
+  
     try {
+      const payload = {
+        recipe: recipe.trim(),
+        // 👇 Enviamos las preferencias del usuario
+        userPreferences: userPreferences || {
+          allergies: [],
+          preferredCuisines: [],
+          country: ""
+        }
+      };
+    
       const response = await fetch("/api/recipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipe: recipe.trim() }),
+        body: JSON.stringify(payload),
       });
-
+    
       const data = await response.json();
       setAnalysis(data.analysis || null);
     } catch (error) {
       console.error("Error:", error);
+      setAnalysis({
+        receta: recipe,
+        ingredientes: [],
+        comentario: "Hubo un error al analizar la receta. Por favor, intenta de nuevo."
+      });
     } finally {
       setLoading(false);
     }
