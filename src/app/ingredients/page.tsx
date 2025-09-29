@@ -15,22 +15,44 @@ import {
   ArrowLeft,
   AlertTriangle,
 } from "lucide-react";
-import { useUserData } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData"; // Hook personalizado para obtener datos del usuario desde Firebase
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
+/**
+ * Página principal para la funcionalidad de "Ingredientes → Recetas".
+ * Permite al usuario ingresar ingredientes (con fechas de vencimiento opcionales),
+ * y enviarlos a una API para obtener recetas personalizadas según sus preferencias.
+ */
 export default function IngredientsPage() {
   const router = useRouter();
+  // Obtiene datos del usuario autenticado: foto, preferencias (alergias, cocina favorita, país) y estado de carga
   const { userPhoto, userPreferences, isLoading } = useUserData();
+
+  // Estado local para gestionar la lista de ingredientes ingresados por el usuario
   const [ingredients, setIngredients] = useState<
     { name: string; expiry?: string | null }[]
   >([{ name: "" }]);
+
+  // Almacena las recetas generadas tras la búsqueda
   const [recipes, setRecipes] = useState<any[]>([]);
+
+  // Indica si se está procesando la solicitud a la API
   const [loading, setLoading] = useState(false);
+
+  // Mensaje de advertencia devuelto por la API (ej: ingredientes insuficientes)
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+  // Indica si el usuario ya ha realizado al menos una búsqueda
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Detecta si la vista actual es en dispositivo móvil (ancho < 768px)
   const [isMobile, setIsMobile] = useState(false);
+
+  // Mensaje temporal mostrado en pantalla (ej: errores, rate limiting)
   const [tempMessage, setTempMessage] = useState<string | null>(null);
+
+  // Tipo de mensaje temporal: 'error' o 'success'
   const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
 
   // Detectar si es móvil
@@ -44,6 +66,10 @@ export default function IngredientsPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  /**
+   * Agrega un nuevo ingrediente vacío a la lista.
+   * Resetea advertencias y resultados previos.
+   */
   const handleAddIngredient = () => {
     setWarningMessage(null);
     setRecipes([]);
@@ -51,6 +77,10 @@ export default function IngredientsPage() {
     setIngredients([...ingredients, { name: "", expiry: null }]);
   };
 
+  /**
+   * Actualiza el nombre de un ingrediente en una posición específica.
+   * Resetea advertencias y resultados previos.
+   */
   const handleChangeIngredientName = (value: string, index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -60,6 +90,10 @@ export default function IngredientsPage() {
     setIngredients(updated);
   };
 
+  /**
+   * Actualiza la fecha de vencimiento de un ingrediente en una posición específica.
+   * Resetea advertencias y resultados previos.
+   */
   const handleChangeIngredientExpiry = (value: string, index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -69,6 +103,10 @@ export default function IngredientsPage() {
     setIngredients(updated);
   };
 
+  /**
+   * Elimina un ingrediente de la lista (si hay más de uno).
+   * Resetea advertencias y resultados previos.
+   */
   const handleRemoveIngredient = (index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -78,16 +116,25 @@ export default function IngredientsPage() {
     }
   };
 
+  /**
+   * Calcula cuántos días faltan para que expire un ingrediente.
+   * @param expiryDate Fecha de vencimiento en formato ISO string o null
+   * @returns Número de días (positivo = futuro, negativo = vencido), o null si no hay fecha
+   */
   const getDaysUntilExpiry = (expiryDate: string | null): number | null => {
     if (!expiryDate) return null;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0); // Normaliza a medianoche
     const expiry = new Date(expiryDate);
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
+  /**
+   * Envía los ingredientes y preferencias del usuario a la API para generar recetas.
+   * Maneja errores, rate limiting (429) y muestra mensajes temporales.
+   */
   const handleSearchRecipes = async (e: React.FormEvent) => {
     e.preventDefault();
     const validIngredients = ingredients.filter(
@@ -121,6 +168,7 @@ export default function IngredientsPage() {
         body: JSON.stringify(payload),
       });
 
+      // Manejo de rate limiting (429 Too Many Requests)
       if (response.status === 429) {
         const errorData = await response.json();
         setTempMessage(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.");
@@ -148,6 +196,9 @@ export default function IngredientsPage() {
     }
   };
 
+  /**
+   * Reinicia el formulario a su estado inicial.
+   */
   const resetForm = () => {
     setIngredients([{ name: "" }]);
     setRecipes([]);
@@ -155,6 +206,9 @@ export default function IngredientsPage() {
     setHasSearched(false);
   };
 
+  /**
+   * Desplaza suavemente la vista hacia la sección de recetas en móviles.
+   */
   const scrollToRecipes = () => {
     if (isMobile && recipes.length > 0) {
       setTimeout(() => {
@@ -165,27 +219,28 @@ export default function IngredientsPage() {
     }
   };
 
-  // Efecto para scroll automático en móvil
+  // Efecto para scroll automático en móvil tras cargar recetas
   useEffect(() => {
     if (isMobile && recipes.length > 0 && !loading) {
       scrollToRecipes();
     }
   }, [recipes, loading, isMobile]);
 
-  // Animaciones para móvil
+  // Definición de variantes de animación para recetas en móvil
   const mobileRecipeVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring" as const, // Explicitly cast to ensure compatibility
+        type: "spring" as const, // Cast explícito para compatibilidad con Framer Motion
         stiffness: 300,
         damping: 30,
       },
     },
   };
 
+  // Variantes para contenedores con stagger (animación secuencial)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -196,6 +251,7 @@ export default function IngredientsPage() {
     },
   };
 
+  // Variantes para elementos individuales dentro del contenedor
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -209,13 +265,14 @@ export default function IngredientsPage() {
     },
   };
 
+  // Variantes para recetas en escritorio (animación lateral)
   const desktopRecipeVariants = {
     hidden: { opacity: 0, x: 50 },
     visible: {
       opacity: 1,
       x: 0,
       transition: {
-        type: "spring" as const, // Explicitly cast to ensure compatibility
+        type: "spring" as const,
         stiffness: 300,
         damping: 30,
       },
@@ -229,6 +286,7 @@ export default function IngredientsPage() {
     },
   };
 
+  // Renderizado de carga inicial mientras se obtienen datos del usuario
   if (isLoading) {
     return (
       <main className="flex flex-col min-h-screen bg-white">
@@ -249,13 +307,13 @@ export default function IngredientsPage() {
     <main className="flex flex-col min-h-screen bg-white">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
-        {/* En móvil: siempre una columna, en desktop: layout condicional */}
+        {/* Contenedor principal con ancho condicional según estado de búsqueda y dispositivo */}
         <div
           className={`${
             hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"
           } mx-auto transition-all duration-300 pt-0 md:pt-2`}
         >
-          {/* Header */}
+          {/* Encabezado con ícono y título */}
           <motion.div
             className="flex items-center justify-between mb-6 md:mb-8"
             initial={{ opacity: 0, y: -20 }}
@@ -281,9 +339,7 @@ export default function IngredientsPage() {
             </div>
           </motion.div>
 
-          {/* Contenido Principal */}
-          {/* En móvil: siempre una columna */}
-          {/* En desktop: dos columnas cuando hay búsqueda */}
+          {/* Layout principal: columna en móvil, dos columnas en escritorio tras búsqueda */}
           <div
             className={`
             ${
@@ -295,7 +351,7 @@ export default function IngredientsPage() {
             }
           `}
           >
-            {/* Sección del Formulario */}
+            {/* Sección del formulario de ingredientes */}
             <motion.div
               layout
               className={`
@@ -336,7 +392,7 @@ export default function IngredientsPage() {
                           layout
                         >
                           <div className="flex flex-col sm:flex-row gap-3 items-start">
-                            {/* Input texto */}
+                            {/* Input de nombre del ingrediente */}
                             <input
                               type="text"
                               value={ingredient.name}
@@ -350,9 +406,9 @@ export default function IngredientsPage() {
                               placeholder="Ej: tomate, cebolla, pollo..."
                             />
 
-                            {/* Grupo derecho: fecha + (etiqueta + botón) */}
+                            {/* Grupo de fecha de vencimiento y acciones */}
                             <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
-                              {/* Input fecha */}
+                              {/* Input de fecha con ícono */}
                               <div className="relative w-full sm:w-auto min-w-[180px]">
                                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
@@ -369,7 +425,7 @@ export default function IngredientsPage() {
                                 />
                               </div>
 
-                              {/* Grupo etiqueta + botón */}
+                              {/* Etiqueta de vencimiento y botón de eliminar */}
                               <div className="flex items-center gap-2 self-center sm:self-start">
                                 <AnimatePresence>
                                   {isExpiringSoon && (
@@ -410,6 +466,7 @@ export default function IngredientsPage() {
                       );
                     })}
 
+                    {/* Botón para agregar más ingredientes */}
                     <motion.button
                       type="button"
                       onClick={handleAddIngredient}
@@ -422,6 +479,7 @@ export default function IngredientsPage() {
                     </motion.button>
                   </div>
 
+                  {/* Botones de acción: buscar y limpiar */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       type="submit"
@@ -488,7 +546,7 @@ export default function IngredientsPage() {
                 </form>
               </motion.div>
 
-              {/* Mensaje de Advertencia */}
+              {/* Mensaje de advertencia (ej: ingredientes insuficientes) */}
               <AnimatePresence>
                 {warningMessage && (
                   <motion.div
@@ -509,7 +567,7 @@ export default function IngredientsPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Sección de Recetas */}
+            {/* Sección de recetas generadas */}
             <AnimatePresence mode="popLayout">
               {(hasSearched || recipes.length > 0) && (
                 <motion.div
@@ -668,7 +726,7 @@ export default function IngredientsPage() {
         </div>
       </div>
 
-      {/* Mensaje temporal para rate limiting y errores */}
+      {/* Toast para mensajes temporales (errores, rate limiting) */}
       {tempMessage && (
         <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
           tempMessageType === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
