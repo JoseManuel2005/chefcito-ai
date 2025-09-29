@@ -42,7 +42,7 @@ export default function GoogleSignInButton() {
         router.push('/onboarding'); // redirige al onboarding si es nuevo
       } else {
         toast.success(`¡Bienvenido de nuevo, ${user?.displayName || "Chef"}! 👋`);
-        router.push('/principal'); // redirige al home si ya es usuario existente
+        router.push('/home'); // redirige al home si ya es usuario existente
       }
 
       // router.push('/ejemploInicio'); // redirección
