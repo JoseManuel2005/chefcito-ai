@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 
       let warning = "";
       if (hasExpired) {
-        warning = `Los siguientes ingredientes están vencidos y no se recomienda usarlos por seguridad: ${expired.join(", ")}.`;
+        warning = `⚠️ Los siguientes ingredientes están vencidos y no se recomienda usarlos por seguridad: ${expired.join(", ")}.`;
       }
 
       if (!hasUsable) {

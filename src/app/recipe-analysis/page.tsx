@@ -22,6 +22,8 @@ export default function RecipeAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [tempMessage, setTempMessage] = useState<string | null>(null);
+  const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
 
   // Detectar si es móvil
   useEffect(() => {
@@ -58,15 +60,30 @@ export default function RecipeAnalysisPage() {
         body: JSON.stringify(payload),
       });
 
+      // 👇 MANEJO DEL RATE LIMITING (429)
+      if (response.status === 429) {
+        const errorData = await response.json();
+        setTempMessage(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.");
+        setTempMessageType('error');
+        setTimeout(() => setTempMessage(null), 5000);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Error en la respuesta");
+      }
+
       const data = await response.json();
       setAnalysis(data.analysis || null);
     } catch (error) {
       console.error("Error:", error);
+      setTempMessage("Hubo un error al analizar la receta. Por favor, intenta de nuevo.");
+      setTempMessageType('error');
+      setTimeout(() => setTempMessage(null), 5000);
       setAnalysis({
         receta: recipe,
         ingredientes: [],
-        comentario:
-          "Hubo un error al analizar la receta. Por favor, intenta de nuevo.",
+        comentario: "Hubo un error al analizar la receta. Por favor, intenta de nuevo.",
       });
     } finally {
       setLoading(false);
@@ -456,6 +473,15 @@ export default function RecipeAnalysisPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Mensaje temporal para rate limiting y errores */}
+      {tempMessage && (
+        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
+          tempMessageType === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+        }`}>
+          {tempMessage}
+        </div>
+      )}
 
       <Footer />
     </main>
