@@ -30,6 +30,8 @@ export default function IngredientsPage() {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [tempMessage, setTempMessage] = useState<string | null>(null);
+  const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
 
   // Detectar si es móvil
   useEffect(() => {
@@ -119,6 +121,18 @@ export default function IngredientsPage() {
         body: JSON.stringify(payload),
       });
 
+      if (response.status === 429) {
+        const errorData = await response.json();
+        setTempMessage(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.");
+        setTempMessageType('error');
+        setTimeout(() => setTempMessage(null), 5000);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Error en la respuesta");
+      }
+
       const data = await response.json();
       setRecipes(data.recipes || []);
       if (data.warning) {
@@ -126,9 +140,9 @@ export default function IngredientsPage() {
       }
     } catch (error) {
       console.error("Error:", error);
-      setWarningMessage(
-        "Hubo un error al generar las recetas. Por favor, intenta de nuevo."
-      );
+      setTempMessage("Hubo un error al generar las recetas. Por favor, intenta de nuevo.");
+      setTempMessageType('error');
+      setTimeout(() => setTempMessage(null), 5000);
     } finally {
       setLoading(false);
     }
@@ -653,6 +667,15 @@ export default function IngredientsPage() {
           </div>
         </div>
       </div>
+
+      {/* Mensaje temporal para rate limiting y errores */}
+      {tempMessage && (
+        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
+          tempMessageType === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+        }`}>
+          {tempMessage}
+        </div>
+      )}
 
       <Footer />
     </main>
