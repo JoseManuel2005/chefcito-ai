@@ -1,32 +1,42 @@
 // app/home/page.tsx
-"use client";
+"use client"; // Indica que este componente es un Client Component en Next.js 13+.
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // Hook para navegación en App Router de Next.js.
 import {
   Utensils,
   BookOpen,
   ChefHat,
   ArrowRight,
-} from "lucide-react";
-import { useUserData } from "@/hooks/useUserData";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+} from "lucide-react"; // Íconos vectoriales desde Lucide React.
+import { useUserData } from "@/hooks/useUserData"; // Hook personalizado para obtener datos del usuario desde Firebase.
+import Footer from "@/components/Footer"; // Componente de pie de página reutilizable.
+import Navbar from "@/components/Navbar"; // Componente de barra de navegación reutilizable.
 
+/**
+ * Página principal de la aplicación (Home).
+ * Muestra opciones de funcionalidad y un resumen de las preferencias del usuario.
+ */
 export default function HomePage() {
-  const router = useRouter();
-  const { userPhoto, userPreferences, isLoading } = useUserData();
+  const router = useRouter(); // Instancia del enrutador para navegar programáticamente.
+  const { userPhoto, userPreferences, isLoading } = useUserData(); // Extrae datos del usuario y estado de carga.
 
+  /**
+   * Maneja la navegación a otras rutas de la aplicación.
+   * @param path - Ruta destino (ej. "/ingredients").
+   */
   const handleNavigation = (path: string) => {
     router.push(path);
   };
 
+  // Muestra un estado de carga mientras se obtienen los datos del usuario.
   if (isLoading) {
     return (
       <main className="flex flex-col min-h-screen bg-white">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
+            {/* Ícono animado de carga */}
             <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-full mb-5 animate-pulse">
               <ChefHat className="w-8 h-8 text-white" />
             </div>
@@ -39,10 +49,11 @@ export default function HomePage() {
 
   return (
     <main className="flex flex-col min-h-screen bg-white">
+      {/* Barra de navegación con foto del usuario (puede ser null si no está autenticado) */}
       <Navbar userPhoto={userPhoto}/>
       <div className="flex-grow p-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          {/* Encabezado visual con ícono y título */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-full mb-5">
               <ChefHat className="w-8 h-8 text-white" />
@@ -53,8 +64,9 @@ export default function HomePage() {
             <p className="text-gray-600">Tu asistente culinario inteligente</p>
           </div>
 
-          {/* Mode Selection */}
+          {/* Sección de selección de modos de uso */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Botón: Modo "Ingredientes → Recetas" */}
             <button
               onClick={() => handleNavigation("/ingredients")}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-left hover:border-yellow-200 hover:shadow-md transition-all cursor-pointer group"
@@ -82,6 +94,7 @@ export default function HomePage() {
               </div>
             </button>
 
+            {/* Botón: Modo "Receta → Análisis" */}
             <button
               onClick={() => handleNavigation("/recipe-analysis")}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-left hover:border-yellow-200 hover:shadow-md transition-all cursor-pointer group"
@@ -110,7 +123,7 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* User Preferences Summary */}
+          {/* Resumen de preferencias del usuario (solo si existen) */}
           {userPreferences && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -140,6 +153,7 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
+              {/* Enlace para editar preferencias */}
               <button
                 onClick={() => router.push("/onboarding")}
                 className="mt-4 text-yellow-600 font-medium text-sm hover:text-yellow-700 transition-colors cursor-pointer"
