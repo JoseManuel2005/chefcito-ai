@@ -12,6 +12,15 @@ function getIP(req: Request): string {
   return forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
 }
 
+// 🔍 Función para verificar si un ingrediente coincide con alguna alergia
+function isAllergen(ingredient: string, allergies: string[]): boolean {
+  const ingLower = ingredient.toLowerCase();
+  return allergies.some(allergy => {
+    const allergyLower = allergy.toLowerCase();
+    return ingLower.includes(allergyLower) || allergyLower.includes(ingLower);
+  });
+}
+
 export async function POST(req: Request) {
   // 👇 --- RATE LIMITING AL INICIO DE LA FUNCIÓN ---
   const ip = getIP(req);
@@ -109,6 +118,19 @@ export async function POST(req: Request) {
         });
       }
 
+      // Verificar conflicto total con alergias
+      if (allergies.length > 0) {
+        const safeIngredients = usableIngredients.filter(ing => !isAllergen(ing, allergies));
+        
+        if (safeIngredients.length === 0) {
+          const allergyWarning = `⚠️ No se pueden generar recetas porque todos tus ingredientes (${usableIngredients.join(", ")}) están relacionados con tus alergias (${allergies.join(", ")}). Por favor, agrega ingredientes seguros.`;
+          return NextResponse.json({
+            recipes: [],
+            warning: warning ? `${warning} ${allergyWarning}` : allergyWarning
+          });
+        }
+      }
+
       // === Construir contexto del usuario para el prompt ===
       let userContext = "";
 
@@ -128,6 +150,14 @@ export async function POST(req: Request) {
         userContext = "No hay preferencias específicas del usuario. ";
       }
 
+      // Filtrar ingredientes seguros para el prompt
+      const safeExpiringSoon = allergies.length > 0 
+        ? expiringSoon.filter(ing => !isAllergen(ing, allergies))
+        : expiringSoon;
+      const safeOthers = allergies.length > 0 
+        ? others.filter(ing => !isAllergen(ing, allergies))
+        : others;
+
       // === Prompt final ===
       const prompt = `Eres un chef experto comprometido con la seguridad alimentaria y la reducción del desperdicio.
 Sigue estas reglas estrictamente:
@@ -136,8 +166,8 @@ Sigue estas reglas estrictamente:
 - ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí.` : "Ubicación no especificada."}
 
 Ingredientes disponibles para usar (todos están en buen estado):
-- 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${expiringSoon.length > 0 ? expiringSoon.join(", ") : "Ninguno"}
-- ✅ Otros ingredientes frescos: ${others.length > 0 ? others.join(", ") : "Ninguno"}
+- 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
+- ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
 
 Genera hasta 2 recetas cortas, realistas, seguras y deliciosas usando SOLO los ingredientes disponibles.
 Puedes usar solo un ingrediente si es necesario.
