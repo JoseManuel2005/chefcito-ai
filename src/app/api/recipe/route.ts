@@ -3,16 +3,27 @@ import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
 
 // 🔒 RATE LIMITING (solo para MVP - en memoria)
+// En producción, se debe usar Redis o una base de datos externa.
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 const MAX_REQUESTS = 5; // máximo 5 peticiones por minuto
 const WINDOW_MS = 60 * 1000; // 1 minuto
 
+/**
+ * Obtiene la dirección IP real del cliente desde los headers.
+ * Prioriza 'x-forwarded-for' (usado por proxies/CDNs) y cae a localhost si no está disponible.
+ */
 function getIP(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');
   return forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
 }
 
-// 🔍 Función para verificar si un ingrediente coincide con alguna alergia
+/**
+ * Verifica si un ingrediente contiene o coincide parcialmente con alguna alergia declarada.
+ * Realiza comparación insensible a mayúsculas/minúsculas y bidireccional (ingrediente ⊆ alergia o viceversa).
+ * @param ingredient Nombre del ingrediente a verificar.
+ * @param allergies Lista de alergias del usuario.
+ * @returns true si hay coincidencia potencial de alergia.
+ */
 function isAllergen(ingredient: string, allergies: string[]): boolean {
   const ingLower = ingredient.toLowerCase();
   return allergies.some(allergy => {
@@ -21,12 +32,19 @@ function isAllergen(ingredient: string, allergies: string[]): boolean {
   });
 }
 
+/**
+ * Maneja solicitudes POST para generar recetas o analizar recetas existentes.
+ * Soporta dos modos:
+ *   1. ingredients → recetas (reducción de desperdicio + alergias + preferencias)
+ *   2. recipe → ingredientes (análisis con contexto del usuario)
+ */
 export async function POST(req: Request) {
-  // 👇 --- RATE LIMITING AL INICIO DE LA FUNCIÓN ---
+  // --- RATE LIMITING AL INICIO DE LA FUNCIÓN ---
   const ip = getIP(req);
   const now = Date.now();
 
-  // Limpieza opcional (cada 10 peticiones)
+  // Limpieza opcional (cada 10 peticiones): elimina entradas expiradas del mapa.
+  // Esto evita que el mapa crezca indefinidamente en memoria durante el MVP.
   if (Math.random() < 0.1) {
     for (const [key, value] of requestCounts.entries()) {
       if (now > value.resetTime) requestCounts.delete(key);
@@ -39,11 +57,13 @@ export async function POST(req: Request) {
     requestCounts.set(ip, ipData);
   }
 
+  // Reinicia el contador si la ventana de tiempo ha expirado.
   if (now > ipData.resetTime) {
     ipData.count = 0;
     ipData.resetTime = now + WINDOW_MS;
   }
 
+  // Bloquea la solicitud si se excede el límite de peticiones.
   if (ipData.count >= MAX_REQUESTS) {
     return NextResponse.json(
       { error: "Demasiadas solicitudes. Por favor, espera 1 minuto." },
@@ -57,13 +77,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { ingredients, recipe, userPreferences } = body;
 
-    // Extraer preferencias (con valores por defecto seguros)
+    // Extraer preferencias del usuario con validación y valores por defecto seguros.
     const allergies = userPreferences?.allergies?.filter((a: any) => typeof a === 'string' && a.trim() !== '') || [];
     const preferredCuisines = userPreferences?.preferredCuisines?.filter((c: any) => typeof c === 'string' && c.trim() !== '') || [];
     const country = (typeof userPreferences?.country === 'string' ? userPreferences.country.trim() : '') || '';
 
     // === MODO 1: Ingredientes → Recetas ===
     if (ingredients && Array.isArray(ingredients)) {
+      // Filtra ingredientes válidos: deben tener una propiedad 'name' no vacía.
       const validIngredients = ingredients
         .filter(ing => ing && typeof ing.name === 'string' && ing.name.trim() !== '');
 
@@ -74,6 +95,7 @@ export async function POST(req: Request) {
         );
       }
 
+      // Normaliza la fecha actual a medianoche para comparar con fechas de vencimiento.
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 
@@ -81,6 +103,7 @@ export async function POST(req: Request) {
       const others: string[] = [];
       const expired: string[] = [];
 
+      // Clasifica ingredientes según su fecha de vencimiento.
       for (const ing of validIngredients) {
         const name = ing.name.trim();
         const expiry = ing.expiry;
@@ -118,7 +141,7 @@ export async function POST(req: Request) {
         });
       }
 
-      // Verificar conflicto total con alergias
+      // Verifica si todos los ingredientes útiles son alérgenos para el usuario.
       if (allergies.length > 0) {
         const safeIngredients = usableIngredients.filter(ing => !isAllergen(ing, allergies));
         
@@ -150,7 +173,7 @@ export async function POST(req: Request) {
         userContext = "No hay preferencias específicas del usuario. ";
       }
 
-      // Filtrar ingredientes seguros para el prompt
+      // Filtrar ingredientes seguros (sin alergias) para el prompt.
       const safeExpiringSoon = allergies.length > 0 
         ? expiringSoon.filter(ing => !isAllergen(ing, allergies))
         : expiringSoon;
@@ -158,7 +181,7 @@ export async function POST(req: Request) {
         ? others.filter(ing => !isAllergen(ing, allergies))
         : others;
 
-      // === Prompt final ===
+      // === Prompt final para generación de recetas ===
       const prompt = `Eres un chef experto comprometido con la seguridad alimentaria y la reducción del desperdicio.
 Sigue estas reglas estrictamente:
 - ${allergies.length > 0 ? `NUNCA uses, sugieras ni menciones ninguno de estos alérgenos: ${allergies.join(", ")}.` : "No hay alergias reportadas."}
@@ -184,6 +207,7 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
   }
 ]`;
 
+      // Llamada a OpenAI para generar recetas.
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
@@ -191,6 +215,7 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
         max_tokens: 1000,
       });
 
+      // Limpieza del contenido de la respuesta para extraer JSON puro.
       const rawText = completion.choices[0]?.message?.content ?? "";
       const cleaned = rawText
         .replace(/```json/g, "")
@@ -242,13 +267,15 @@ Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato e
   "tiempo": "30-40 minutos",
   "comentario": "Notas útiles: ¿faltan ingredientes comunes? ¿hay sustituciones por alergias o región? ¿se adapta a sus preferencias?"
 }`;
-    
+      
+      // Llamada a OpenAI para analizar la receta.
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       });
-    
+      
+      // Limpieza robusta del contenido de la respuesta.
       const rawText = completion.choices[0]?.message?.content ?? "";
       const cleaned = rawText
         .replace(/```json/g, "")
@@ -264,6 +291,7 @@ Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato e
           result = JSON.parse(cleaned);
         }
       } catch {
+        // Si falla el parseo, devuelve una respuesta segura por defecto.
         result = { 
           receta: recipe, 
           ingredientes: [],
@@ -274,6 +302,7 @@ Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato e
       return NextResponse.json({ analysis: result });
     }
 
+    // Error si no se proporciona ni 'ingredients' ni 'recipe'.
     return NextResponse.json(
       { error: "Debes enviar 'ingredients' (array) o 'recipe' (string)" },
       { status: 400 }
