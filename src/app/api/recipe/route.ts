@@ -188,6 +188,12 @@ Sigue estas reglas estrictamente:
 - ${preferredCuisines.length > 0 ? `Prioriza recetas inspiradas en: ${preferredCuisines.join(", ")}.` : "Sin preferencias culinarias específicas."}
 - ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí.` : "Ubicación no especificada."}
 
+ANTES DE GENERAR RECETAS:
+1. Filtra los ingredientes y conserva SOLO aquellos que sean comestibles, reales y seguros para consumo humano.
+2. Ignora completamente ingredientes no comestibles como: piedra, lapiz, plastico, metal, papel, noingrediente, etc.
+3. Si después del filtrado no quedan ingredientes válidos, devuelve un array vacío [].
+4. Si por ejemplo introduce "piedra" y luego "pollo" (ingrediente real), olvida "piedra" y usa los ingredientes que si son comestibles.
+
 Ingredientes disponibles para usar (todos están en buen estado):
 - 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
 - ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
@@ -259,6 +265,18 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
     
       const prompt = `Eres un experto en cocina y nutrición.
 ${userContext}
+
+ANTES DE ANALIZAR:
+1. Verifica que la receta "${recipe}" sea un plato comestible real y seguro para consumo humano.
+2. Si la receta es absurda, no comestible o peligrosa (ej: "sopa de piedras", "ensalada de lapiz", "pastel de plastico"), responde con:
+{
+  "receta": "${recipe}",
+  "ingredientes": [],
+  "tiempo": "0 minutos",
+  "comentario": "⚠️ La receta '${recipe}' no es un plato comestible real. Por favor, ingresa el nombre de una receta válida (ej: Paella, Tacos, Risotto)."
+}
+
+3. Si la receta es válida, analiza sus ingredientes reales y seguros.
 
 Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
 {
