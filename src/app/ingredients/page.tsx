@@ -58,7 +58,7 @@ export default function IngredientsPage() {
   // Detectar si es móvil
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 1150);
     };
 
     checkMobile();
@@ -289,14 +289,14 @@ export default function IngredientsPage() {
   // Renderizado de carga inicial mientras se obtienen datos del usuario
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-full mb-5 animate-pulse">
               <ChefHat className="w-8 h-8 text-white" />
             </div>
-            <p className="text-gray-600">Cargando...</p>
+            <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
           </div>
         </div>
       </main>
@@ -304,14 +304,13 @@ export default function IngredientsPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
         {/* Contenedor principal con ancho condicional según estado de búsqueda y dispositivo */}
         <div
-          className={`${
-            hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"
-          } mx-auto transition-all duration-300 pt-0 md:pt-2`}
+          className={`${hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"
+            } mx-auto transition-all duration-300 pt-0 md:pt-2`}
         >
           {/* Encabezado con ícono y título */}
           <motion.div
@@ -322,17 +321,17 @@ export default function IngredientsPage() {
           >
             <div className="flex items-center gap-3">
               <motion.div
-                className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center"
+                className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                <Utensils className="w-5 h-5 text-yellow-600" />
+                <Utensils className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </motion.div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Ingredientes → Recetas
                 </h1>
-                <p className="text-xs md:text-sm text-gray-600">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   Genera recetas con tus ingredientes disponibles
                 </p>
               </div>
@@ -342,23 +341,21 @@ export default function IngredientsPage() {
           {/* Layout principal: columna en móvil, dos columnas en escritorio tras búsqueda */}
           <div
             className={`
-            ${
-              isMobile
+            ${isMobile
                 ? "flex flex-col space-y-6"
                 : hasSearched
-                ? "flex flex-row gap-20 items-start"
-                : "flex flex-col items-center"
-            }
+                  ? "flex flex-row gap-20 items-start"
+                  : "flex flex-col items-center"
+              }
           `}
           >
             {/* Sección del formulario de ingredientes */}
             <motion.div
               layout
               className={`
-                ${
-                  isMobile
-                    ? "w-full"
-                    : hasSearched
+                ${isMobile
+                  ? "w-full"
+                  : hasSearched
                     ? "w-1/2 sticky top-6"
                     : "w-full"
                 }
@@ -368,7 +365,7 @@ export default function IngredientsPage() {
             >
               <motion.div
                 layout
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
@@ -402,7 +399,7 @@ export default function IngredientsPage() {
                                   index
                                 )
                               }
-                              className="flex-1 w-full px-4 py-3 border border-gray-200 rounded-lg text-black focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base"
+                              className="flex-1 w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
                               placeholder="Ej: tomate, cebolla, pollo..."
                             />
 
@@ -410,7 +407,7 @@ export default function IngredientsPage() {
                             <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                               {/* Input de fecha con ícono */}
                               <div className="relative w-full sm:w-auto min-w-[180px]">
-                                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                 <input
                                   type="date"
                                   value={ingredient.expiry || ""}
@@ -420,7 +417,7 @@ export default function IngredientsPage() {
                                       index
                                     )
                                   }
-                                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-black focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base"
+                                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base cursor-pointer"
                                   aria-label="Fecha de vencimiento (opcional)"
                                 />
                               </div>
@@ -433,11 +430,10 @@ export default function IngredientsPage() {
                                       initial={{ opacity: 0, scale: 0.8 }}
                                       animate={{ opacity: 1, scale: 1 }}
                                       exit={{ opacity: 0, scale: 0.8 }}
-                                      className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                                        isExpired
-                                          ? "bg-red-100 text-red-700"
-                                          : "bg-yellow-100 text-yellow-800"
-                                      }`}
+                                      className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${isExpired
+                                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                                          : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
+                                        }`}
                                     >
                                       {isExpired
                                         ? "Vencido"
@@ -452,7 +448,7 @@ export default function IngredientsPage() {
                                     onClick={() =>
                                       handleRemoveIngredient(index)
                                     }
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.95 }}
                                   >
@@ -470,7 +466,7 @@ export default function IngredientsPage() {
                     <motion.button
                       type="button"
                       onClick={handleAddIngredient}
-                      className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-500 rounded-lg hover:border-yellow-300 hover:text-yellow-600 transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                      className="w-full py-3 border-2 cursor-pointer border-dashed border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg hover:border-yellow-300 dark:hover:border-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -488,26 +484,26 @@ export default function IngredientsPage() {
                         ingredients.every((ing) => ing.name.trim() === "") ||
                         isLoading
                       }
-                      className="flex-1 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                      className="flex-1 dark:text-gray-800 cursor-pointer bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
                       whileHover={{
                         scale:
                           loading ||
-                          ingredients.every((ing) => ing.name.trim() === "") ||
-                          isLoading
+                            ingredients.every((ing) => ing.name.trim() === "") ||
+                            isLoading
                             ? 1
                             : 1.02,
                         boxShadow:
                           loading ||
-                          ingredients.every((ing) => ing.name.trim() === "") ||
-                          isLoading
+                            ingredients.every((ing) => ing.name.trim() === "") ||
+                            isLoading
                             ? "none"
                             : "0 4px 12px rgba(251, 191, 36, 0.3)",
                       }}
                       whileTap={{
                         scale:
                           loading ||
-                          ingredients.every((ing) => ing.name.trim() === "") ||
-                          isLoading
+                            ingredients.every((ing) => ing.name.trim() === "") ||
+                            isLoading
                             ? 1
                             : 0.98,
                       }}
@@ -528,7 +524,7 @@ export default function IngredientsPage() {
                       ) : (
                         <>
                           <Search className="w-4 h-4" />
-                          Buscar recetas
+                         Buscar recetas
                         </>
                       )}
                     </motion.button>
@@ -536,7 +532,7 @@ export default function IngredientsPage() {
                     <motion.button
                       type="button"
                       onClick={resetForm}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base"
+                      className="px-6 py-3 border cursor-pointer border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm md:text-base"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -556,9 +552,9 @@ export default function IngredientsPage() {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-red-700 font-medium">
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
                         {warningMessage}
                       </p>
                     </div>
@@ -586,7 +582,7 @@ export default function IngredientsPage() {
                   {recipes.length > 0 ? (
                     <motion.div className="space-y-4 md:space-y-6">
                       <motion.h3
-                        className="text-xl md:text-2xl font-bold text-gray-900 text-center mb-4 md:mb-10"
+                        className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white text-center mb-4 md:mb-10"
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -596,7 +592,7 @@ export default function IngredientsPage() {
                       {recipes.map((recipeItem, index) => (
                         <motion.div
                           key={index}
-                          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 hover:shadow-md transition-shadow"
+                          className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3 + index * 0.1 }}
@@ -604,16 +600,16 @@ export default function IngredientsPage() {
                         >
                           <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
                             <motion.div
-                              className="w-10 h-10 md:w-12 md:h-12 bg-yellow-50 rounded-xl flex items-center justify-center shrink-0"
+                              className="w-10 h-10 md:w-12 md:h-12 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center shrink-0"
                               whileHover={{ rotate: 5 }}
                             >
-                              <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+                              <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
                             </motion.div>
                             <div className="flex-1">
-                              <h4 className="text-lg md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">
+                              <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
                                 {recipeItem.nombre || `Receta ${index + 1}`}
                               </h4>
-                              <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500">
+                              <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                                 <div className="flex items-center gap-1">
                                   <Clock className="w-3 h-3 md:w-4 md:h-4" />
                                   {recipeItem.tiempo || "Tiempo no estimado"}
@@ -622,13 +618,14 @@ export default function IngredientsPage() {
                             </div>
                           </div>
 
-                          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                          <div className="grid md:grid-cols-3 gap-4 md:gap-0 mr-20">
                             <motion.div
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.4 + index * 0.1 }}
+                              className="col-span-1"
                             >
-                              <h5 className="font-semibold text-gray-900 mb-2 md:mb-3 text-sm md:text-base">
+                              <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
                                 Ingredientes:
                               </h5>
                               <ul className="space-y-1 md:space-y-2">
@@ -636,14 +633,14 @@ export default function IngredientsPage() {
                                   (ing: string, i: number) => (
                                     <motion.li
                                       key={i}
-                                      className="flex items-center gap-2 text-gray-700 text-sm md:text-base"
+                                      className="flex items-center gap-3 text-gray-700 dark:text-gray-300 text-sm md:text-base"
                                       initial={{ opacity: 0 }}
                                       animate={{ opacity: 1 }}
                                       transition={{
                                         delay: 0.5 + index * 0.1 + i * 0.05,
                                       }}
                                     >
-                                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full shrink-0" />
+                                      <div className="w-1.5 h-1.5 bg-yellow-400 dark:bg-yellow-500 rounded-full shrink-0" />
                                       {ing}
                                     </motion.li>
                                   )
@@ -655,8 +652,9 @@ export default function IngredientsPage() {
                               initial={{ opacity: 0, x: 20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.5 + index * 0.1 }}
+                              className="col-span-2 md:ml-5"
                             >
-                              <h5 className="font-semibold text-gray-900 mb-2 md:mb-3 text-sm md:text-base">
+                              <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
                                 Preparación:
                               </h5>
                               <ol className="space-y-1 md:space-y-2">
@@ -664,17 +662,17 @@ export default function IngredientsPage() {
                                   (paso: string, i: number) => (
                                     <motion.li
                                       key={i}
-                                      className="flex gap-2 md:gap-3 text-gray-700 text-sm md:text-base"
+                                      className="flex gap-2 md:gap-4 text-gray-700 dark:text-gray-300 text-sm md:text-base"
                                       initial={{ opacity: 0, y: 10 }}
                                       animate={{ opacity: 1, y: 0 }}
                                       transition={{
                                         delay: 0.6 + index * 0.1 + i * 0.05,
                                       }}
                                     >
-                                      <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 text-yellow-700 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
+                                      <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
                                         {i + 1}
                                       </span>
-                                      <span>{paso}</span>
+                                      <span className="">{paso}</span>
                                     </motion.li>
                                   )
                                 )}
@@ -709,7 +707,7 @@ export default function IngredientsPage() {
                           <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
                         </motion.div>
                         <motion.p
-                          className="text-gray-600 font-medium text-sm md:text-base"
+                          className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.2 }}
@@ -728,9 +726,10 @@ export default function IngredientsPage() {
 
       {/* Toast para mensajes temporales (errores, rate limiting) */}
       {tempMessage && (
-        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
-          tempMessageType === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-        }`}>
+        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${tempMessageType === 'error'
+            ? 'bg-red-500 text-white dark:bg-red-600'
+            : 'bg-green-500 text-white dark:bg-green-600'
+          }`}>
           {tempMessage}
         </div>
       )}
