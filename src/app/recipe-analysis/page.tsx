@@ -172,7 +172,7 @@ export default function RecipeAnalysisPage() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -192,7 +192,7 @@ export default function RecipeAnalysisPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-gray-600"
+              className="text-gray-600 dark:text-gray-400"
             >
               Cargando...
             </motion.p>
@@ -203,7 +203,7 @@ export default function RecipeAnalysisPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
         <motion.div
@@ -221,17 +221,17 @@ export default function RecipeAnalysisPage() {
           >
             <div className="flex items-center gap-3">
               <motion.div 
-                className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center"
+                className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-xl flex items-center justify-center"
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
-                <BookOpen className="w-5 h-5 text-green-600" />
+                <BookOpen className="w-5 h-5 text-green-600 dark:text-green-400" />
               </motion.div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Receta → Análisis
                 </h1>
-                <p className="text-xs md:text-sm text-gray-600">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   Descubre los ingredientes de cualquier receta
                 </p>
               </div>
@@ -264,7 +264,7 @@ export default function RecipeAnalysisPage() {
             >
               <motion.div
                 layout
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
@@ -275,7 +275,7 @@ export default function RecipeAnalysisPage() {
                       type="text"
                       value={recipe}
                       onChange={(e) => setRecipe(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-black focus:border-green-400 focus:ring-1 focus:ring-green-400 focus:outline-none transition-colors text-sm md:text-base"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Ej: Paella valenciana, Tacos al pastor, Risotto..."
                     />
                   </motion.div>
@@ -287,7 +287,7 @@ export default function RecipeAnalysisPage() {
                     <motion.button
                       type="submit"
                       disabled={loading || !recipe.trim()}
-                      className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
+                      className="flex-1 dark:text-gray-800 bg-green-500 hover:bg-green-600 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base cursor-pointer"
                       whileHover={{ 
                         scale: (loading || !recipe.trim()) ? 1 : 1.02,
                         boxShadow: (loading || !recipe.trim()) ? "none" : "0 4px 12px rgba(34, 197, 94, 0.3)"
@@ -305,7 +305,7 @@ export default function RecipeAnalysisPage() {
                         </>
                       ) : (
                         <>
-                          <Search className="w-4 h-4" />
+                          <Search className="w-4 h-4 dark:text-gray-800" />
                           Analizar ingredientes
                         </>
                       )}
@@ -314,7 +314,7 @@ export default function RecipeAnalysisPage() {
                     <motion.button
                       type="button"
                       onClick={resetForm}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base"
+                      className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 cursor-pointer dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm md:text-base"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -344,7 +344,7 @@ export default function RecipeAnalysisPage() {
                 >
                   {analysis ? (
                     <motion.div 
-                      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8"
+                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
@@ -356,14 +356,14 @@ export default function RecipeAnalysisPage() {
                         transition={{ delay: 0.3 }}
                       >
                         <motion.div 
-                          className="w-10 h-10 md:w-12 md:h-12 bg-green-50 rounded-xl flex items-center justify-center shrink-0"
+                          className="w-10 h-10 md:w-12 md:h-12 bg-green-50 dark:bg-green-900/30 rounded-xl flex items-center justify-center shrink-0"
                           whileHover={{ rotate: 5 }}
                         >
-                          <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+                          <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
                         </motion.div>
                         <div className="flex-1">
                           <motion.h4 
-                            className="text-lg md:text-xl font-semibold text-gray-900 mb-1 md:mb-2"
+                            className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
@@ -371,7 +371,7 @@ export default function RecipeAnalysisPage() {
                             {analysis.receta || "Análisis de receta"}
                           </motion.h4>
                           <motion.div 
-                            className="flex items-center gap-2 text-xs md:text-sm text-gray-600"
+                            className="flex items-center gap-2 text-xs md:text-sm text-gray-600 dark:text-gray-400"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.5 }}
@@ -388,7 +388,7 @@ export default function RecipeAnalysisPage() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.6 }}
                         >
-                          <h5 className="font-semibold text-gray-900 mb-3 md:mb-4 text-sm md:text-base">
+                          <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
                             Lista de ingredientes:
                           </h5>
                           <div className="space-y-2">
@@ -396,7 +396,7 @@ export default function RecipeAnalysisPage() {
                               (ing: string, i: number) => (
                                 <motion.div
                                   key={i}
-                                  className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
+                                  className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
                                   initial={{ opacity: 0, x: -10 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: 0.7 + i * 0.05 }}
@@ -406,7 +406,7 @@ export default function RecipeAnalysisPage() {
                                     className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"
                                     whileHover={{ scale: 1.5 }}
                                   />
-                                  <span className="text-gray-700 text-sm md:text-base">{ing}</span>
+                                  <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{ing}</span>
                                 </motion.div>
                               )
                             )}
@@ -419,16 +419,16 @@ export default function RecipeAnalysisPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.8 }}
                           >
-                            <h5 className="font-semibold text-gray-900 mb-3 md:mb-4 text-sm md:text-base">
+                            <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
                               Notas adicionales:
                             </h5>
                             <motion.div 
-                              className="p-3 md:p-4 bg-blue-50 border border-blue-100 rounded-lg"
+                              className="p-3 md:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg"
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: 0.9 }}
                             >
-                              <p className="text-blue-800 text-xs md:text-sm leading-relaxed">
+                              <p className="text-blue-800 dark:text-blue-300 text-xs md:text-sm leading-relaxed">
                                 {analysis.comentario}
                               </p>
                             </motion.div>
@@ -457,7 +457,7 @@ export default function RecipeAnalysisPage() {
                           <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
                         </motion.div>
                         <motion.p 
-                          className="text-gray-600 font-medium text-sm md:text-base"
+                          className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.2 }}
@@ -477,7 +477,9 @@ export default function RecipeAnalysisPage() {
       {/* Mensaje temporal para rate limiting y errores */}
       {tempMessage && (
         <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
-          tempMessageType === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+          tempMessageType === 'error' 
+            ? 'bg-red-500 text-white dark:bg-red-600' 
+            : 'bg-green-500 text-white dark:bg-green-600'
         }`}>
           {tempMessage}
         </div>
