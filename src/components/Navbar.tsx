@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { useTheme } from "@/contexts/ThemeContext";
+import UserGuide from "@/components/UserGuide";
 
 interface NavbarProps {
   userPhoto?: string | null;
@@ -15,6 +16,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navigation = [
@@ -51,13 +53,19 @@ export default function Navbar({ userPhoto }: NavbarProps) {
     setIsUserMenuOpen(false);
   };
 
+  const handleManualOpen = () => {
+    setIsManualOpen(true);
+    setIsUserMenuOpen(false);
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 backdrop-blur-sm mb-5 transition-colors duration-300">
         <div className="max-w-430 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-18">
             {/* Logo */}
-            <div 
+            <div
               className="flex items-center gap-3 cursor-pointer"
               onClick={() => router.push("/home")}
             >
@@ -120,15 +128,23 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 top-12 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                     <button
+                      onClick={handleManualOpen}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Manual de Usuario
+                    </button>
+
+                    <button
                       onClick={handlePreferences}
                       className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
                     >
                       <Settings className="w-4 h-4" />
                       Preferencias
                     </button>
-                    
+
                     <div className="border-t border-gray-100 dark:border-gray-600 my-1"></div>
-                    
+
                     <button
                       onClick={handleSignOut}
                       className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
@@ -146,7 +162,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
               {/* Toggle de tema para móvil */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
                 aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
               >
                 {theme === 'light' ? (
@@ -158,7 +174,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
               >
                 {isMenuOpen ? (
                   <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -186,7 +202,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                   {item.name}
                 </button>
               ))}
-              
+
               {/* Mobile User Section */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                 <div className="flex items-center gap-3 px-3 py-2 mb-2">
@@ -206,7 +222,15 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                   </div>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Mi cuenta</span>
                 </div>
-                
+
+                <button
+                  onClick={handleManualOpen}
+                  className="w-full text-left px-3 py-3 text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg font-medium transition-all duration-200 flex items-center gap-3"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Manual de Usuario
+                </button>
+
                 <button
                   onClick={() => {
                     router.push("/onboarding");
@@ -217,7 +241,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                   <Settings className="w-4 h-4" />
                   Preferencias
                 </button>
-                
+
                 <button
                   onClick={handleSignOut}
                   className="w-full text-left px-3 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg font-medium transition-all duration-200 flex items-center gap-3"
@@ -230,6 +254,12 @@ export default function Navbar({ userPhoto }: NavbarProps) {
           </div>
         )}
       </nav>
+
+      {/* Componente Manual de Usuario */}
+      <UserGuide 
+        isOpen={isManualOpen} 
+        onClose={() => setIsManualOpen(false)} 
+      />
     </>
   );
 }
