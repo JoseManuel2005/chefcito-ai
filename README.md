@@ -92,7 +92,8 @@ Toda la información de preferencias se guarda de forma segura y se usa únicame
 - **TailwindCSS**  
 - **Framer Motion**  
 - **Lucide React Icons**  
-- **OpenAI API** (para la generación y análisis de recetas)  
+- **OpenAI API** (para la generación y análisis de recetas)
+- **Vercel** (despliegue)  
 
 ---
 
