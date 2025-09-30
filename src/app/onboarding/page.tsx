@@ -52,17 +52,17 @@ export default function OnboardingPage() {
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          const data = userDoc.data();
+          const data = userDoc.data() as { allergies?: string[]; preferredCuisines?: string[]; country?: string };
 
           // Alergias
-          const existingAllergies = data.allergies || [""];
+          const existingAllergies = data.allergies ?? [""];
           setAllergies(existingAllergies.length > 0 ? existingAllergies : [""]);
 
           // Cocinas predefinidas y personalizadas
-          const allCuisines = data.preferredCuisines || [];
-          const predefined = cuisines.map(c => c.name);
-          const existingPredefined = allCuisines.filter(c => predefined.includes(c));
-          const existingCustom = allCuisines.filter(c => !predefined.includes(c));
+          const allCuisines: string[] = data.preferredCuisines ?? [];
+          const predefined = cuisines.map((c) => c.name);
+          const existingPredefined = allCuisines.filter((c) => predefined.includes(c));
+          const existingCustom = allCuisines.filter((c) => !predefined.includes(c));
 
           setPreferredCuisines(existingPredefined);
           setCustomCuisines(existingCustom.length > 0 ? existingCustom : [""]);
