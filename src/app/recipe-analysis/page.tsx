@@ -3,16 +3,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
+import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder';
 import {
   BookOpen,
   Search,
   Clock,
   ArrowLeft,
   Home,
+  Volume2, 
+  Pause
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { useTTS } from '@/hooks/useTTS';
 
 export default function RecipeAnalysisPage() {
   const router = useRouter();
@@ -24,6 +28,10 @@ export default function RecipeAnalysisPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
+  const [voiceTranscription, setVoiceTranscription] = useState("");
+  const tts = useTTS();
+  const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null); // aunque solo hay 1 receta
+  const [lastSearchedRecipe, setLastSearchedRecipe] = useState("");
 
   // Detectar si es móvil
   useEffect(() => {
@@ -38,11 +46,14 @@ export default function RecipeAnalysisPage() {
 
   const handleAnalyzeRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipe.trim()) return;
+    const cleanRecipe = recipe.trim();
 
+    if (!cleanRecipe || cleanRecipe.length < 3) return;
+  
     setLoading(true);
     setAnalysis(null);
     setHasSearched(true);
+    setLastSearchedRecipe(cleanRecipe);
 
     try {
       const payload = {
@@ -90,10 +101,28 @@ export default function RecipeAnalysisPage() {
     }
   };
 
+  // Función para extraer el nombre de la receta desde texto hablado
+  const extractRecipeName = (transcribedText: string): string => {
+    const cleaned = transcribedText
+      .toLowerCase()
+      .replace(/^(¿cómo se (hace|prepara)|receta de|dime cómo hacer|enséñame a preparar|quiero (hacer|la receta de)|hazme|necesito|podrías hacerme)\s*/i, "")
+      .replace(/[?¿!¡.,;:"]/g, "")
+      .trim();
+
+    // Si es muy corto o solo números/símbolos, devolver vacío
+    if (cleaned.length < 2 || !/[a-záéíóúñ]/.test(cleaned)) {
+      return "";
+    }
+
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  };
+
   const resetForm = () => {
     setRecipe("");
     setAnalysis(null);
     setHasSearched(false);
+    setVoiceTranscription("");
+    setLastSearchedRecipe("");
   };
 
   const scrollToAnalysis = () => {
@@ -112,6 +141,16 @@ export default function RecipeAnalysisPage() {
       scrollToAnalysis();
     }
   }, [analysis, loading, isMobile]);
+
+  // Reiniciar resultados si el usuario edita la receta tras una búsqueda
+  useEffect(() => {
+    if (hasSearched && recipe.trim() !== lastSearchedRecipe) {
+      setAnalysis(null);
+      setHasSearched(false);
+      // Opcional: resetear lastSearchedRecipe
+      setLastSearchedRecipe("");
+    }
+  }, [recipe, hasSearched, lastSearchedRecipe]);
 
   // Animaciones
   const containerVariants: Variants = {
@@ -271,13 +310,31 @@ export default function RecipeAnalysisPage() {
               >
                 <form onSubmit={handleAnalyzeRecipe} className="space-y-4 md:space-y-6">
                   <motion.div variants={itemVariants}>
-                    <input
-                      type="text"
-                      value={recipe}
-                      onChange={(e) => setRecipe(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Ej: Paella valenciana, Tacos al pastor, Risotto..."
-                    />
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="text"
+                          value={recipe}
+                          onChange={(e) => setRecipe(e.target.value)}
+                          className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
+                          placeholder="Ej: Paella valenciana, Tacos al pastor..."
+                        />
+                        <VoiceRecorder 
+                          onTranscriptionReady={(text) => {
+                            const extractedRecipe = extractRecipeName(text);
+                            if (extractedRecipe.trim() !== "") {
+                              setRecipe(extractedRecipe);
+                            }
+                            setVoiceTranscription(text); // Siempre muestra la transcripción cruda
+                          }} 
+                        />
+                      </div>
+                      {voiceTranscription && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Transcripción: <span className="font-medium">{voiceTranscription}</span>
+                        </p>
+                      )}
+                    </div>
                   </motion.div>
 
                   <motion.div 
@@ -286,7 +343,7 @@ export default function RecipeAnalysisPage() {
                   >
                     <motion.button
                       type="submit"
-                      disabled={loading || !recipe.trim()}
+                      disabled={loading || recipe.trim().length < 3}
                       className="flex-1 dark:text-gray-800 bg-green-500 hover:bg-green-600 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base cursor-pointer"
                       whileHover={{ 
                         scale: (loading || !recipe.trim()) ? 1 : 1.02,
@@ -327,7 +384,7 @@ export default function RecipeAnalysisPage() {
 
             {/* Analysis Section */}
             <AnimatePresence mode="popLayout">
-              {(hasSearched || analysis) && (
+              {(hasSearched && analysis) && (
                 <motion.div
                   key="analysis-section"
                   id="analysis-section"
@@ -362,14 +419,45 @@ export default function RecipeAnalysisPage() {
                           <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
                         </motion.div>
                         <div className="flex-1">
-                          <motion.h4 
-                            className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                          >
-                            {analysis.receta || "Análisis de receta"}
-                          </motion.h4>
+                          <div className="flex items-start justify-between">
+                            <motion.h4 
+                              className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2"
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.4 }}
+                            >
+                              {analysis.receta || "Análisis de receta"}
+                            </motion.h4>
+                            {/* Botón de TTS */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (tts.status === "playing") {
+                                  tts.pause();
+                                } else if (tts.status === "paused") {
+                                  tts.resume();
+                                } else {
+                                  // Formatear texto para TTS
+                                  const ttsText = `
+                                    Receta: ${analysis.receta || 'Sin nombre'}.
+                                    Ingredientes: ${analysis.ingredientes?.join(', ') || 'No especificados'}.
+                                    Preparación: ${analysis.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
+                                  `.replace(/\s+/g, ' ').trim();
+                                  tts.speak(ttsText);
+                                }
+                              }}
+                              className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                              aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                            >
+                              {tts.status === "loading" ? (
+                                <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                              ) : tts.status === "playing" ? (
+                                <Pause className="w-5 h-5" />
+                              ) : (
+                                <Volume2 className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
                           <motion.div 
                             className="flex items-center gap-2 text-xs md:text-sm text-gray-600 dark:text-gray-400"
                             initial={{ opacity: 0 }}
@@ -381,43 +469,87 @@ export default function RecipeAnalysisPage() {
                           </motion.div>
                         </div>
                       </motion.div>
-
-                      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.6 }}
-                        >
-                          <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
-                            Lista de ingredientes:
-                          </h5>
-                          <div className="space-y-2">
-                            {(analysis.ingredientes || []).map(
-                              (ing: string, i: number) => (
-                                <motion.div
-                                  key={i}
-                                  className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: 0.7 + i * 0.05 }}
-                                  whileHover={{ x: 5 }}
-                                >
-                                  <motion.div 
-                                    className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"
-                                    whileHover={{ scale: 1.5 }}
-                                  />
-                                  <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{ing}</span>
-                                </motion.div>
-                              )
-                            )}
-                          </div>
-                        </motion.div>
-
+                  
+                      {/* Grid de 3 columnas en escritorio, 1 en móvil */}
+                      {/* Layout de 2 columnas en escritorio */}
+                      <div className={`
+                        ${isMobile 
+                          ? 'space-y-6' 
+                          : 'grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6'
+                        }
+                      `}>
+                        {/* Columna principal: Ingredientes + Pasos */}
+                        <div className={isMobile ? '' : 'space-y-6'}>
+                          {/* Ingredientes */}
+                          <motion.div
+                            initial={{ opacity: 0, y: isMobile ? 20 : 0 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                          >
+                            <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
+                              Ingredientes:
+                            </h5>
+                            <div className="space-y-2">
+                              {(analysis.ingredientes || []).map(
+                                (ing: string, i: number) => (
+                                  <motion.div
+                                    key={i}
+                                    className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                                    initial={{ opacity: 0, x: isMobile ? -10 : 0 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.7 + i * 0.05 }}
+                                    whileHover={{ x: isMobile ? 0 : 5 }}
+                                  >
+                                    <motion.div 
+                                      className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0"
+                                      whileHover={{ scale: 1.5 }}
+                                    />
+                                    <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{ing}</span>
+                                  </motion.div>
+                                )
+                              )}
+                            </div>
+                          </motion.div>
+                            
+                          {/* Pasos de preparación */}
+                          {analysis.pasos && analysis.pasos.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: isMobile ? 20 : 0 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.8 }}
+                            >
+                              <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
+                                Cómo prepararla:
+                              </h5>
+                              <ol className="space-y-2">
+                                {(analysis.pasos || []).map(
+                                  (paso: string, i: number) => (
+                                    <motion.li
+                                      key={i}
+                                      className="flex gap-2 md:gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                                      initial={{ opacity: 0, y: isMobile ? 10 : 0 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: 0.9 + i * 0.05 }}
+                                    >
+                                      <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
+                                        {i + 1}
+                                      </span>
+                                      <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{paso}</span>
+                                    </motion.li>
+                                  )
+                                )}
+                              </ol>
+                            </motion.div>
+                          )}
+                        </div>
+                        
+                        {/* Columna secundaria: Notas adicionales */}
                         {analysis.comentario && (
                           <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.8 }}
+                            initial={{ opacity: 0, y: isMobile ? 20 : 0 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.0 }}
+                            className="lg:sticky lg:top-6"
                           >
                             <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">
                               Notas adicionales:
@@ -426,7 +558,7 @@ export default function RecipeAnalysisPage() {
                               className="p-3 md:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg"
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.9 }}
+                              transition={{ delay: 1.1 }}
                             >
                               <p className="text-blue-800 dark:text-blue-300 text-xs md:text-sm leading-relaxed">
                                 {analysis.comentario}
