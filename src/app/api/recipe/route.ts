@@ -272,18 +272,27 @@ ANTES DE ANALIZAR:
 {
   "receta": "${recipe}",
   "ingredientes": [],
+  "pasos": [],
   "tiempo": "0 minutos",
   "comentario": "⚠️ La receta '${recipe}' no es un plato comestible real. Por favor, ingresa el nombre de una receta válida (ej: Paella, Tacos, Risotto)."
 }
 
-3. Si la receta es válida, analiza sus ingredientes reales y seguros.
+3. Si la receta es válida, analiza sus ingredientes reales y seguros, y genera una secuencia clara de pasos de preparación.
+
+Instrucciones para recetas válidas:
+- Extrae una lista precisa de ingredientes (solo los esenciales).
+- Estima un tiempo de preparación REALISTA (en minutos).
+- Genera entre 3 y 6 pasos claros, secuenciales y accionables para preparar la receta.
+- Los pasos deben ser simples, prácticos y adaptados a un cocinero ocasional.
+- Si la receta se puede adaptar a las preferencias del usuario (alergias, región, cocina), menciónalo en el comentario.
 
 Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
 {
   "receta": "Nombre de la receta",
   "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+  "pasos": ["Paso 1", "Paso 2", "Paso 3", ...],
   "tiempo": "30-40 minutos",
-  "comentario": "Notas útiles: ¿faltan ingredientes comunes? ¿hay sustituciones por alergias o región? ¿se adapta a sus preferencias?"
+  "comentario": "Notas útiles: ¿faltan ingredientes? ¿sustituciones? ¿adaptación a preferencias?"
 }`;
       
       // Llamada a OpenAI para analizar la receta.

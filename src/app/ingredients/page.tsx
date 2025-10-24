@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder';
 import {
   Utensils,
   Plus,
@@ -14,8 +15,11 @@ import {
   Users,
   ArrowLeft,
   AlertTriangle,
+  Volume2, 
+  Pause
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData"; // Hook personalizado para obtener datos del usuario desde Firebase
+import { useTTS } from '@/hooks/useTTS';
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -54,6 +58,15 @@ export default function IngredientsPage() {
 
   // Tipo de mensaje temporal: 'error' o 'success'
   const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
+
+  // Estado para la transcripción de voz
+  const [voiceTranscription, setVoiceTranscription] = useState<string>("");
+
+  const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
+
+  // Dentro de IngredientsPage, junto a otros useState
+  const tts = useTTS();
+  const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
 
   // Detectar si es móvil
   useEffect(() => {
@@ -132,43 +145,80 @@ export default function IngredientsPage() {
   };
 
   /**
-   * Envía los ingredientes y preferencias del usuario a la API para generar recetas.
-   * Maneja errores, rate limiting (429) y muestra mensajes temporales.
-   */
+ * Envía los ingredientes y preferencias del usuario a la API para generar recetas.
+ * Combina ingredientes manuales y de transcripción de voz.
+ */
   const handleSearchRecipes = async (e: React.FormEvent) => {
+    // Dentro de handleSearchRecipes, al inicio
+    tts.stop();
+    setCurrentTTSIndex(null);
+    
     e.preventDefault();
-    const validIngredients = ingredients.filter(
-      (ing) => ing.name.trim() !== ""
-    );
-    if (validIngredients.length === 0) return;
-
+  
+    // 1. Ingredientes manuales válidos
+    const manualIngredients = ingredients
+      .filter(ing => ing.name.trim() !== "")
+      .map(ing => ({ name: ing.name.trim(), expiry: ing.expiry }));
+  
+    // 2. Ingredientes de transcripción (si existe)
+    let voiceIngredients: { name: string; expiry: null }[] = [];
+    if (voiceTranscription.trim() !== "") {
+      voiceIngredients = voiceTranscription
+        .split(',')
+        .map(ing => ing.trim())
+        .filter(ing => ing !== "")
+        .map(name => ({ name, expiry: null }));
+    }
+  
+    // 3. Combinar ambos (sin duplicados)
+    const allIngredientNames = new Set<string>();
+    const combinedIngredients: { name: string; expiry: string | null }[] = [];
+  
+    // Primero, agregar ingredientes manuales (conservan su fecha de vencimiento)
+    for (const ing of manualIngredients) {
+      const key = ing.name.toLowerCase();
+      if (!allIngredientNames.has(key)) {
+        allIngredientNames.add(key);
+        combinedIngredients.push(ing);
+      }
+    }
+  
+    // Luego, agregar ingredientes de voz (solo si no están ya en la lista)
+    for (const ing of voiceIngredients) {
+      const key = ing.name.toLowerCase();
+      if (!allIngredientNames.has(key)) {
+        allIngredientNames.add(key);
+        combinedIngredients.push(ing);
+      }
+    }
+  
+    // Si no hay ingredientes válidos, salir
+    if (combinedIngredients.length === 0) return;
+  
+    // Continuar con la lógica de envío
     setLoading(true);
     setRecipes([]);
     setWarningMessage(null);
     setHasSearched(true);
-
+  
     try {
       const payload = {
-        ingredients: validIngredients.map((ing) => ({
-          name: ing.name.trim(),
-          expiry: ing.expiry,
-        })),
+        ingredients: combinedIngredients,
         userPreferences: userPreferences || {
           allergies: [],
           preferredCuisines: [],
           country: "",
         },
       };
-
-      console.log("Enviando preferencias al API:", payload.userPreferences);
-
+    
+      console.log("Enviando ingredientes combinados:", combinedIngredients);
+    
       const response = await fetch("/api/recipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      // Manejo de rate limiting (429 Too Many Requests)
+    
       if (response.status === 429) {
         const errorData = await response.json();
         setTempMessage(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.");
@@ -176,11 +226,11 @@ export default function IngredientsPage() {
         setTimeout(() => setTempMessage(null), 5000);
         return;
       }
-
+    
       if (!response.ok) {
         throw new Error("Error en la respuesta");
       }
-
+    
       const data = await response.json();
       setRecipes(data.recipes || []);
       if (data.warning) {
@@ -204,6 +254,10 @@ export default function IngredientsPage() {
     setRecipes([]);
     setWarningMessage(null);
     setHasSearched(false);
+    setVoiceTranscription("");
+    setIsVoiceFieldActive(false); // ← Reinicia el estado del campo de voz
+    tts.stop();
+    setCurrentTTSIndex(null);
   };
 
   /**
@@ -313,30 +367,30 @@ export default function IngredientsPage() {
             } mx-auto transition-all duration-300 pt-0 md:pt-2`}
         >
           {/* Encabezado con ícono y título */}
-          <motion.div
-            className="flex items-center justify-between mb-6 md:mb-8"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <Utensils className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              </motion.div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                  Ingredientes → Recetas
-                </h1>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                  Genera recetas con tus ingredientes disponibles
-                </p>
-              </div>
+        <motion.div
+          className="flex items-center justify-between mb-6 md:mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <Utensils className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            </motion.div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                Ingredientes → Recetas
+              </h1>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                Genera recetas con tus ingredientes disponibles
+              </p>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
           {/* Layout principal: columna en móvil, dos columnas en escritorio tras búsqueda */}
           <div
@@ -475,13 +529,58 @@ export default function IngredientsPage() {
                     </motion.button>
                   </div>
 
+                  {/* Campo de transcripción de voz (solo visible tras grabar) */}
+                  {isVoiceFieldActive ? (
+                    <div className="pt-2">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="text"
+                          value={voiceTranscription}
+                          onChange={(e) => setVoiceTranscription(e.target.value)}
+                          placeholder="Edita la transcripción si es necesario..."
+                          className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
+                          aria-label="Transcripción de voz (editable)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVoiceTranscription("");
+                            setIsVoiceFieldActive(false);
+                          }}
+                          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                          aria-label="Cerrar campo de voz"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Este campo solo aparece tras usar el micrófono. Edita si la transcripción no es precisa.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="pt-2 flex items-center gap-2">
+                      <div className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm cursor-not-allowed">
+                        Habla tus ingredientes usando el micrófono
+                      </div>
+                      <VoiceRecorder 
+                        onTranscriptionReady={(text) => {
+                          const cleanText = text.trim();
+                          setVoiceTranscription(cleanText);
+                          if (cleanText !== "") {
+                            setIsVoiceFieldActive(true);
+                          }
+                        }} 
+                      />
+                    </div>
+                  )}
+
                   {/* Botones de acción: buscar y limpiar */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       type="submit"
                       disabled={
                         loading ||
-                        ingredients.every((ing) => ing.name.trim() === "") ||
+                        (ingredients.every((ing) => ing.name.trim() === "") && voiceTranscription.trim() === "") ||
                         isLoading
                       }
                       className="flex-1 dark:text-gray-800 cursor-pointer bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
@@ -589,98 +688,141 @@ export default function IngredientsPage() {
                       >
                         Recetas sugeridas
                       </motion.h3>
-                      {recipes.map((recipeItem, index) => (
-                        <motion.div
-                          key={index}
-                          className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3 + index * 0.1 }}
-                          whileHover={{ y: isMobile ? 0 : -2 }}
-                        >
-                          <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
-                            <motion.div
-                              className="w-10 h-10 md:w-12 md:h-12 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center shrink-0"
-                              whileHover={{ rotate: 5 }}
-                            >
-                              <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
-                            </motion.div>
-                            <div className="flex-1">
-                              <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
-                                {recipeItem.nombre || `Receta ${index + 1}`}
-                              </h4>
-                              <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3 md:w-4 md:h-4" />
-                                  {recipeItem.tiempo || "Tiempo no estimado"}
+                      {recipes.map((recipeItem, index) => {
+                        // Formatear el texto para TTS
+                        const ttsText = `
+                          Receta: ${recipeItem.nombre || 'Sin nombre'}.
+                          Ingredientes: ${recipeItem.ingredientes?.join(', ') || 'No especificados'}.
+                          Preparación: ${recipeItem.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
+                        `.replace(/\s+/g, ' ').trim();
+                                            
+                        return (
+                          <motion.div
+                            key={index}
+                            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 + index * 0.1 }}
+                            whileHover={{ y: isMobile ? 0 : -2 }}
+                          >
+                            <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+                              <motion.div
+                                className="w-10 h-10 md:w-12 md:h-12 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center shrink-0"
+                                whileHover={{ rotate: 5 }}
+                              >
+                                <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
+                              </motion.div>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between">
+                                  <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
+                                    {recipeItem.nombre || `Receta ${index + 1}`}
+                                  </h4>
+                                  {/* Botón de TTS */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (currentTTSIndex === index) {
+                                        if (tts.status === "playing") {
+                                          tts.pause();
+                                        } else if (tts.status === "paused") {
+                                          tts.resume();
+                                        }
+                                      } else {
+                                        tts.stop();
+                                        setCurrentTTSIndex(index);
+                                        tts.speak(ttsText);
+                                      }
+                                    }}
+                                    className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                    aria-label={
+                                      currentTTSIndex === index && tts.status === "playing"
+                                        ? "Pausar lectura"
+                                        : "Leer receta en voz alta"
+                                    }
+                                  >
+                                    {currentTTSIndex === index && tts.status === "loading" ? (
+                                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    ) : currentTTSIndex === index && tts.status === "playing" ? (
+                                      <Pause className="w-5 h-5" />
+                                    ) : (
+                                      <Volume2 className="w-5 h-5" />
+                                    )}
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3 md:w-4 md:h-4" />
+                                    {recipeItem.tiempo || "Tiempo no estimado"}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                                  
+                            {/* ... resto del contenido de la receta (ingredientes, pasos) ... */}
+                            <div className="grid md:grid-cols-3 gap-4 md:gap-0 mr-20">
+                              <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4 + index * 0.1 }}
+                                className="col-span-1"
+                              >
+                                <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
+                                  Ingredientes:
+                                </h5>
+                                <ul className="space-y-1 md:space-y-2">
+                                  {(recipeItem.ingredientes || []).map(
+                                    (ing: string, i: number) => (
+                                      <motion.li
+                                        key={i}
+                                        className="flex items-center gap-3 text-gray-700 dark:text-gray-300 text-sm md:text-base"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{
+                                          delay: 0.5 + index * 0.1 + i * 0.05,
+                                        }}
+                                      >
+                                        <div className="w-1.5 h-1.5 bg-yellow-400 dark:bg-yellow-500 rounded-full shrink-0" />
+                                        {ing}
+                                      </motion.li>
+                                    )
+                                  )}
+                                </ul>
+                              </motion.div>
 
-                          <div className="grid md:grid-cols-3 gap-4 md:gap-0 mr-20">
-                            <motion.div
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.4 + index * 0.1 }}
-                              className="col-span-1"
-                            >
-                              <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
-                                Ingredientes:
-                              </h5>
-                              <ul className="space-y-1 md:space-y-2">
-                                {(recipeItem.ingredientes || []).map(
-                                  (ing: string, i: number) => (
-                                    <motion.li
-                                      key={i}
-                                      className="flex items-center gap-3 text-gray-700 dark:text-gray-300 text-sm md:text-base"
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      transition={{
-                                        delay: 0.5 + index * 0.1 + i * 0.05,
-                                      }}
-                                    >
-                                      <div className="w-1.5 h-1.5 bg-yellow-400 dark:bg-yellow-500 rounded-full shrink-0" />
-                                      {ing}
-                                    </motion.li>
-                                  )
-                                )}
-                              </ul>
-                            </motion.div>
-
-                            <motion.div
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5 + index * 0.1 }}
-                              className="col-span-2 md:ml-5"
-                            >
-                              <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
-                                Preparación:
-                              </h5>
-                              <ol className="space-y-1 md:space-y-2">
-                                {(recipeItem.pasos || []).map(
-                                  (paso: string, i: number) => (
-                                    <motion.li
-                                      key={i}
-                                      className="flex gap-2 md:gap-4 text-gray-700 dark:text-gray-300 text-sm md:text-base"
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{
-                                        delay: 0.6 + index * 0.1 + i * 0.05,
-                                      }}
-                                    >
-                                      <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
-                                        {i + 1}
-                                      </span>
-                                      <span className="">{paso}</span>
-                                    </motion.li>
-                                  )
-                                )}
-                              </ol>
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      ))}
+                              <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 + index * 0.1 }}
+                                className="col-span-2 md:ml-5"
+                              >
+                                <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
+                                  Preparación:
+                                </h5>
+                                <ol className="space-y-1 md:space-y-2">
+                                  {(recipeItem.pasos || []).map(
+                                    (paso: string, i: number) => (
+                                      <motion.li
+                                        key={i}
+                                        className="flex gap-2 md:gap-4 text-gray-700 dark:text-gray-300 text-sm md:text-base"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{
+                                          delay: 0.6 + index * 0.1 + i * 0.05,
+                                        }}
+                                      >
+                                        <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
+                                          {i + 1}
+                                        </span>
+                                        <span className="">{paso}</span>
+                                      </motion.li>
+                                    )
+                                  )}
+                                </ol>
+                              </motion.div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                     </motion.div>
                   ) : loading ? (
                     <motion.div
