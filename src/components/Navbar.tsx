@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen } from "lucide-react";
+import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen, Heart } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { useTheme } from "@/contexts/ThemeContext";
 import UserGuide from "@/components/UserGuide";
@@ -143,6 +143,14 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                       Preferencias
                     </button>
 
+                    <button
+                      onClick={() => { router.push("/favorites"); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Recetas Favoritas
+                    </button>
+
                     <div className="border-t border-gray-100 dark:border-gray-600 my-1"></div>
 
                     <button
@@ -240,6 +248,14 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                 >
                   <Settings className="w-4 h-4" />
                   Preferencias
+                </button>
+
+                <button
+                  onClick={() => { router.push("/favorites"); setIsMenuOpen(false); }}
+                  className="w-full text-left px-3 py-3 text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg font-medium transition-all duración-200 flex items-center gap-3"
+                >
+                  <Heart className="w-4 h-4" />
+                  Recetas Favoritas
                 </button>
 
                 <button
