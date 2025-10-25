@@ -136,19 +136,27 @@ export default function HomePage() {
                   <div className="grid md:grid-cols-3 gap-4 text-sm flex-1">
                     <div>
                       <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Alergias</p>
-                      <p className="text-gray-800 dark:text-gray-200">
-                        {userPreferences.allergies.length
-                          ? userPreferences.allergies.join(", ")
-                          : "Ninguna"}
-                      </p>
+                      {userPreferences.allergies?.length ? (
+                        <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
+                          {userPreferences.allergies.map((item, idx) => (
+                            <li key={idx} className="truncate">{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-200">Ninguna</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Cocinas favoritas</p>
-                      <p className="text-gray-800 dark:text-gray-200">
-                        {userPreferences.preferredCuisines.length
-                          ? userPreferences.preferredCuisines.join(", ")
-                          : "Ninguna"}
-                      </p>
+                      {userPreferences.preferredCuisines?.length ? (
+                        <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
+                          {userPreferences.preferredCuisines.map((item, idx) => (
+                            <li key={idx} className="truncate">{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-200">Ninguna</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">País</p>
