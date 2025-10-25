@@ -11,6 +11,7 @@ import {
 import { useUserData } from "@/hooks/useUserData"; // Hook personalizado para obtener datos del usuario desde Firebase.
 import Footer from "@/components/Footer"; // Componente de pie de página reutilizable.
 import Navbar from "@/components/Navbar"; // Componente de barra de navegación reutilizable.
+import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes"; // Hook para favoritos en Firestore
 
 /**
  * Página principal de la aplicación (Home).
@@ -19,6 +20,7 @@ import Navbar from "@/components/Navbar"; // Componente de barra de navegación 
 export default function HomePage() {
   const router = useRouter();
   const { userPhoto, userPreferences, isLoading } = useUserData();
+  const { favorites, isLoadingFavorites } = useFavoriteRecipes();
 
   /**
    * Maneja la navegación a otras rutas de la aplicación.
@@ -122,43 +124,81 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Resumen de preferencias del usuario (solo si existen) */}
-          {userPreferences && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Tus preferencias
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Alergias</p>
-                  <p className="text-gray-800 dark:text-gray-200">
-                    {userPreferences.allergies.length
-                      ? userPreferences.allergies.join(", ")
-                      : "Ninguna"}
-                  </p>
+          {/* Resumen de preferencias y favoritos */}
+          {(userPreferences || true) && (
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {/* Card: Tus preferencias (si existen) */}
+              {userPreferences && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Tus preferencias
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4 text-sm flex-1">
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Alergias</p>
+                      {userPreferences.allergies?.length ? (
+                        <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
+                          {userPreferences.allergies.map((item, idx) => (
+                            <li key={idx} className="truncate">{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-200">Ninguna</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Cocinas favoritas</p>
+                      {userPreferences.preferredCuisines?.length ? (
+                        <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
+                          {userPreferences.preferredCuisines.map((item, idx) => (
+                            <li key={idx} className="truncate">{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-800 dark:text-gray-200">Ninguna</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">País</p>
+                      <p className="text-gray-800 dark:text-gray-200">
+                        {userPreferences.country || "No especificado"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => router.push("/onboarding")}
+                    className="mt-4 self-start text-yellow-600 dark:text-yellow-400 font-medium text-sm hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors cursor-pointer"
+                  >
+                    Editar preferencias
+                  </button>
                 </div>
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Cocinas favoritas</p>
-                  <p className="text-gray-800 dark:text-gray-200">
-                    {userPreferences.preferredCuisines.length
-                      ? userPreferences.preferredCuisines.join(", ")
-                      : "Ninguna"}
-                  </p>
+              )}
+
+              {/* Card: Tus recetas favoritos */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Tus recetas favoritas
+                </h3>
+                <div className="text-sm space-y-2 min-h-[60px] flex-1">
+                  {isLoadingFavorites ? (
+                    <p className="text-gray-600 dark:text-gray-400">Cargando favoritos...</p>
+                  ) : Array.from(favorites.values()).length > 0 ? (
+                    <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
+                      {Array.from(favorites.values()).slice(0, 5).map((fav) => (
+                        <li key={fav.id} className="truncate">{fav.nombre}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600 dark:text-gray-400">Aún no tienes recetas favoritas.</p>
+                  )}
                 </div>
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">País</p>
-                  <p className="text-gray-800 dark:text-gray-200">
-                    {userPreferences.country || "No especificado"}
-                  </p>
-                </div>
+                <button
+                  onClick={() => router.push("/favorites")}
+                  className="mt-4 self-start text-yellow-600 dark:text-yellow-400 font-medium text-sm hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors cursor-pointer"
+                >
+                  Editar recetas favoritas
+                </button>
               </div>
-              {/* Enlace para editar preferencias */}
-              <button
-                onClick={() => router.push("/onboarding")}
-                className="mt-4 text-yellow-600 dark:text-yellow-400 font-medium text-sm hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors cursor-pointer"
-              >
-                Editar preferencias
-              </button>
             </div>
           )}
         </div>

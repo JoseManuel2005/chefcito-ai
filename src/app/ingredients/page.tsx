@@ -1,3 +1,5 @@
+
+
 // app/ingredients/page.tsx
 "use client";
 
@@ -16,10 +18,12 @@ import {
   ArrowLeft,
   AlertTriangle,
   Volume2, 
-  Pause
+  Pause,
+  Heart,
 } from "lucide-react";
-import { useUserData } from "@/hooks/useUserData"; // Hook personalizado para obtener datos del usuario desde Firebase
+import { useUserData } from "@/hooks/useUserData";
 import { useTTS } from '@/hooks/useTTS';
+import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -30,45 +34,27 @@ import Navbar from "@/components/Navbar";
  */
 export default function IngredientsPage() {
   const router = useRouter();
-  // Obtiene datos del usuario autenticado: foto, preferencias (alergias, cocina favorita, país) y estado de carga
   const { userPhoto, userPreferences, isLoading } = useUserData();
 
-  // Estado local para gestionar la lista de ingredientes ingresados por el usuario
   const [ingredients, setIngredients] = useState<
     { name: string; expiry?: string | null }[]
   >([{ name: "" }]);
 
-  // Almacena las recetas generadas tras la búsqueda
   const [recipes, setRecipes] = useState<any[]>([]);
-
-  // Indica si se está procesando la solicitud a la API
   const [loading, setLoading] = useState(false);
-
-  // Mensaje de advertencia devuelto por la API (ej: ingredientes insuficientes)
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
-
-  // Indica si el usuario ya ha realizado al menos una búsqueda
   const [hasSearched, setHasSearched] = useState(false);
-
-  // Detecta si la vista actual es en dispositivo móvil (ancho < 768px)
   const [isMobile, setIsMobile] = useState(false);
-
-  // Mensaje temporal mostrado en pantalla (ej: errores, rate limiting)
   const [tempMessage, setTempMessage] = useState<string | null>(null);
-
-  // Tipo de mensaje temporal: 'error' o 'success'
   const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
-
-  // Estado para la transcripción de voz
   const [voiceTranscription, setVoiceTranscription] = useState<string>("");
-
   const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
-
-  // Dentro de IngredientsPage, junto a otros useState
   const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
+  
+  // Favoritos persistidos en Firestore
+  const { toggleFavorite: toggleFavoriteDb, isFavorite } = useFavoriteRecipes();
 
-  // Detectar si es móvil
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1150);
@@ -79,10 +65,6 @@ export default function IngredientsPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  /**
-   * Agrega un nuevo ingrediente vacío a la lista.
-   * Resetea advertencias y resultados previos.
-   */
   const handleAddIngredient = () => {
     setWarningMessage(null);
     setRecipes([]);
@@ -90,10 +72,6 @@ export default function IngredientsPage() {
     setIngredients([...ingredients, { name: "", expiry: null }]);
   };
 
-  /**
-   * Actualiza el nombre de un ingrediente en una posición específica.
-   * Resetea advertencias y resultados previos.
-   */
   const handleChangeIngredientName = (value: string, index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -103,10 +81,6 @@ export default function IngredientsPage() {
     setIngredients(updated);
   };
 
-  /**
-   * Actualiza la fecha de vencimiento de un ingrediente en una posición específica.
-   * Resetea advertencias y resultados previos.
-   */
   const handleChangeIngredientExpiry = (value: string, index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -116,10 +90,6 @@ export default function IngredientsPage() {
     setIngredients(updated);
   };
 
-  /**
-   * Elimina un ingrediente de la lista (si hay más de uno).
-   * Resetea advertencias y resultados previos.
-   */
   const handleRemoveIngredient = (index: number) => {
     setWarningMessage(null);
     setRecipes([]);
@@ -129,38 +99,26 @@ export default function IngredientsPage() {
     }
   };
 
-  /**
-   * Calcula cuántos días faltan para que expire un ingrediente.
-   * @param expiryDate Fecha de vencimiento en formato ISO string o null
-   * @returns Número de días (positivo = futuro, negativo = vencido), o null si no hay fecha
-   */
   const getDaysUntilExpiry = (expiryDate: string | null): number | null => {
     if (!expiryDate) return null;
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normaliza a medianoche
+    today.setHours(0, 0, 0, 0);
     const expiry = new Date(expiryDate);
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
-  /**
- * Envía los ingredientes y preferencias del usuario a la API para generar recetas.
- * Combina ingredientes manuales y de transcripción de voz.
- */
   const handleSearchRecipes = async (e: React.FormEvent) => {
-    // Dentro de handleSearchRecipes, al inicio
     tts.stop();
     setCurrentTTSIndex(null);
     
     e.preventDefault();
   
-    // 1. Ingredientes manuales válidos
     const manualIngredients = ingredients
       .filter(ing => ing.name.trim() !== "")
-      .map(ing => ({ name: ing.name.trim(), expiry: ing.expiry }));
+      .map(ing => ({ name: ing.name.trim(), expiry: ing.expiry ?? null }));
   
-    // 2. Ingredientes de transcripción (si existe)
     let voiceIngredients: { name: string; expiry: null }[] = [];
     if (voiceTranscription.trim() !== "") {
       voiceIngredients = voiceTranscription
@@ -170,11 +128,9 @@ export default function IngredientsPage() {
         .map(name => ({ name, expiry: null }));
     }
   
-    // 3. Combinar ambos (sin duplicados)
     const allIngredientNames = new Set<string>();
     const combinedIngredients: { name: string; expiry: string | null }[] = [];
   
-    // Primero, agregar ingredientes manuales (conservan su fecha de vencimiento)
     for (const ing of manualIngredients) {
       const key = ing.name.toLowerCase();
       if (!allIngredientNames.has(key)) {
@@ -183,7 +139,6 @@ export default function IngredientsPage() {
       }
     }
   
-    // Luego, agregar ingredientes de voz (solo si no están ya en la lista)
     for (const ing of voiceIngredients) {
       const key = ing.name.toLowerCase();
       if (!allIngredientNames.has(key)) {
@@ -192,10 +147,8 @@ export default function IngredientsPage() {
       }
     }
   
-    // Si no hay ingredientes válidos, salir
     if (combinedIngredients.length === 0) return;
   
-    // Continuar con la lógica de envío
     setLoading(true);
     setRecipes([]);
     setWarningMessage(null);
@@ -246,23 +199,17 @@ export default function IngredientsPage() {
     }
   };
 
-  /**
-   * Reinicia el formulario a su estado inicial.
-   */
   const resetForm = () => {
     setIngredients([{ name: "" }]);
     setRecipes([]);
     setWarningMessage(null);
     setHasSearched(false);
     setVoiceTranscription("");
-    setIsVoiceFieldActive(false); // ← Reinicia el estado del campo de voz
+    setIsVoiceFieldActive(false);
     tts.stop();
     setCurrentTTSIndex(null);
   };
 
-  /**
-   * Desplaza suavemente la vista hacia la sección de recetas en móviles.
-   */
   const scrollToRecipes = () => {
     if (isMobile && recipes.length > 0) {
       setTimeout(() => {
@@ -273,28 +220,25 @@ export default function IngredientsPage() {
     }
   };
 
-  // Efecto para scroll automático en móvil tras cargar recetas
   useEffect(() => {
     if (isMobile && recipes.length > 0 && !loading) {
       scrollToRecipes();
     }
   }, [recipes, loading, isMobile]);
 
-  // Definición de variantes de animación para recetas en móvil
   const mobileRecipeVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring" as const, // Cast explícito para compatibilidad con Framer Motion
+        type: "spring" as const,
         stiffness: 300,
         damping: 30,
       },
     },
   };
 
-  // Variantes para contenedores con stagger (animación secuencial)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -305,7 +249,6 @@ export default function IngredientsPage() {
     },
   };
 
-  // Variantes para elementos individuales dentro del contenedor
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -319,7 +262,6 @@ export default function IngredientsPage() {
     },
   };
 
-  // Variantes para recetas en escritorio (animación lateral)
   const desktopRecipeVariants = {
     hidden: { opacity: 0, x: 50 },
     visible: {
@@ -340,7 +282,6 @@ export default function IngredientsPage() {
     },
   };
 
-  // Renderizado de carga inicial mientras se obtienen datos del usuario
   if (isLoading) {
     return (
       <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -361,12 +302,10 @@ export default function IngredientsPage() {
     <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
-        {/* Contenedor principal con ancho condicional según estado de búsqueda y dispositivo */}
         <div
           className={`${hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"
             } mx-auto transition-all duration-300 pt-0 md:pt-2`}
         >
-          {/* Encabezado con ícono y título */}
         <motion.div
           className="flex items-center justify-between mb-6 md:mb-8"
           initial={{ opacity: 0, y: -20 }}
@@ -392,7 +331,6 @@ export default function IngredientsPage() {
           </div>
         </motion.div>
 
-          {/* Layout principal: columna en móvil, dos columnas en escritorio tras búsqueda */}
           <div
             className={`
             ${isMobile
@@ -403,7 +341,6 @@ export default function IngredientsPage() {
               }
           `}
           >
-            {/* Sección del formulario de ingredientes */}
             <motion.div
               layout
               className={`
@@ -443,7 +380,6 @@ export default function IngredientsPage() {
                           layout
                         >
                           <div className="flex flex-col sm:flex-row gap-3 items-start">
-                            {/* Input de nombre del ingrediente */}
                             <input
                               type="text"
                               value={ingredient.name}
@@ -457,9 +393,7 @@ export default function IngredientsPage() {
                               placeholder="Ej: tomate, cebolla, pollo..."
                             />
 
-                            {/* Grupo de fecha de vencimiento y acciones */}
                             <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
-                              {/* Input de fecha con ícono */}
                               <div className="relative w-full sm:w-auto min-w-[180px]">
                                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                                 <input
@@ -476,7 +410,6 @@ export default function IngredientsPage() {
                                 />
                               </div>
 
-                              {/* Etiqueta de vencimiento y botón de eliminar */}
                               <div className="flex items-center gap-2 self-center sm:self-start">
                                 <AnimatePresence>
                                   {isExpiringSoon && (
@@ -516,7 +449,6 @@ export default function IngredientsPage() {
                       );
                     })}
 
-                    {/* Botón para agregar más ingredientes */}
                     <motion.button
                       type="button"
                       onClick={handleAddIngredient}
@@ -529,7 +461,6 @@ export default function IngredientsPage() {
                     </motion.button>
                   </div>
 
-                  {/* Campo de transcripción de voz (solo visible tras grabar) */}
                   {isVoiceFieldActive ? (
                     <div className="pt-2">
                       <div className="flex items-start gap-2">
@@ -574,7 +505,6 @@ export default function IngredientsPage() {
                     </div>
                   )}
 
-                  {/* Botones de acción: buscar y limpiar */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       type="submit"
@@ -641,7 +571,6 @@ export default function IngredientsPage() {
                 </form>
               </motion.div>
 
-              {/* Mensaje de advertencia (ej: ingredientes insuficientes) */}
               <AnimatePresence>
                 {warningMessage && (
                   <motion.div
@@ -662,7 +591,6 @@ export default function IngredientsPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Sección de recetas generadas */}
             <AnimatePresence mode="popLayout">
               {(hasSearched || recipes.length > 0) && (
                 <motion.div
@@ -689,12 +617,13 @@ export default function IngredientsPage() {
                         Recetas sugeridas
                       </motion.h3>
                       {recipes.map((recipeItem, index) => {
-                        // Formatear el texto para TTS
                         const ttsText = `
                           Receta: ${recipeItem.nombre || 'Sin nombre'}.
                           Ingredientes: ${recipeItem.ingredientes?.join(', ') || 'No especificados'}.
                           Preparación: ${recipeItem.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
                         `.replace(/\s+/g, ' ').trim();
+                        const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
+                        const isFav = isFavorite(nombreReceta);
                                             
                         return (
                           <motion.div
@@ -713,41 +642,88 @@ export default function IngredientsPage() {
                                 <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
                               </motion.div>
                               <div className="flex-1">
-                                <div className="flex items-start justify-between">
+                                <div className="flex items-start justify-between gap-2">
                                   <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
-                                    {recipeItem.nombre || `Receta ${index + 1}`}
+                                    {nombreReceta}
                                   </h4>
-                                  {/* Botón de TTS */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (currentTTSIndex === index) {
-                                        if (tts.status === "playing") {
-                                          tts.pause();
-                                        } else if (tts.status === "paused") {
-                                          tts.resume();
+                                  <div className="flex items-center gap-1">
+                                    {/* Botón de TTS */}
+                                    <motion.button
+                                      type="button"
+                                      onClick={() => {
+                                        if (currentTTSIndex === index) {
+                                          if (tts.status === "playing") {
+                                            tts.pause();
+                                          } else if (tts.status === "paused") {
+                                            tts.resume();
+                                          }
+                                        } else {
+                                          tts.stop();
+                                          setCurrentTTSIndex(index);
+                                          tts.speak(ttsText);
                                         }
-                                      } else {
-                                        tts.stop();
-                                        setCurrentTTSIndex(index);
-                                        tts.speak(ttsText);
+                                      }}
+                                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                                      whileHover={{ scale: 1.1 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      aria-label={
+                                        currentTTSIndex === index && tts.status === "playing"
+                                          ? "Pausar lectura"
+                                          : "Leer receta en voz alta"
                                       }
-                                    }}
-                                    className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                                    aria-label={
-                                      currentTTSIndex === index && tts.status === "playing"
-                                        ? "Pausar lectura"
-                                        : "Leer receta en voz alta"
-                                    }
-                                  >
-                                    {currentTTSIndex === index && tts.status === "loading" ? (
-                                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                    ) : currentTTSIndex === index && tts.status === "playing" ? (
-                                      <Pause className="w-5 h-5" />
-                                    ) : (
-                                      <Volume2 className="w-5 h-5" />
-                                    )}
-                                  </button>
+                                    >
+                                      {currentTTSIndex === index && tts.status === "loading" ? (
+                                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                      ) : currentTTSIndex === index && tts.status === "playing" ? (
+                                        <Pause className="w-5 h-5" />
+                                      ) : (
+                                        <Volume2 className="w-5 h-5" />
+                                      )}
+                                    </motion.button>
+                                    
+                                    {/* Botón de favorito */}
+                                    <motion.button
+                                      type="button"
+                                      onClick={async () => {
+                                        const data = {
+                                          nombre: nombreReceta,
+                                          ingredientes: (recipeItem.ingredientes || []) as string[],
+                                          pasos: (recipeItem.pasos || []) as string[],
+                                          tiempo: (recipeItem.tiempo || "") as string,
+                                        };
+                                        const wasFav = isFav;
+                                        const ok = await toggleFavoriteDb(data);
+                                        if (!ok) {
+                                          setTempMessage("Inicia sesión para guardar favoritos");
+                                          setTempMessageType('error');
+                                          setTimeout(() => setTempMessage(null), 4000);
+                                          return;
+                                        }
+                                        setTempMessage(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+                                        setTempMessageType('success');
+                                        setTimeout(() => setTempMessage(null), 2500);
+                                      }}
+                                      className={`p-1.5 rounded-full transition-colors cursor-pointer group ${
+                                        isFav
+                                          ? "hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                                          : "hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                                      }`}
+                                      whileHover={{ scale: 1.1 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      aria-label={
+                                        isFav
+                                          ? "Quitar de favoritos"
+                                          : "Agregar a favoritos"
+                                      }
+                                    >
+                                      <Heart 
+                                        className={`w-5 h-5 transition-colors ${
+                                          isFav
+                                          ? "text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400"
+                                          : "text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400"}`}
+                                      />
+                                    </motion.button>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                                   <div className="flex items-center gap-1">
@@ -758,7 +734,6 @@ export default function IngredientsPage() {
                               </div>
                             </div>
                                   
-                            {/* ... resto del contenido de la receta (ingredientes, pasos) ... */}
                             <div className="grid md:grid-cols-3 gap-4 md:gap-0 mr-20">
                               <motion.div
                                 initial={{ opacity: 0, x: -20 }}
@@ -866,7 +841,6 @@ export default function IngredientsPage() {
         </div>
       </div>
 
-      {/* Toast para mensajes temporales (errores, rate limiting) */}
       {tempMessage && (
         <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${tempMessageType === 'error'
             ? 'bg-red-500 text-white dark:bg-red-600'
@@ -880,3 +854,5 @@ export default function IngredientsPage() {
     </main>
   );
 }
+
+//app/ingredients/page.tsx

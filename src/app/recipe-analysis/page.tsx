@@ -11,9 +11,11 @@ import {
   ArrowLeft,
   Home,
   Volume2, 
-  Pause
+  Pause,
+  Heart,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
+import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { useTTS } from '@/hooks/useTTS';
@@ -32,6 +34,7 @@ export default function RecipeAnalysisPage() {
   const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null); // aunque solo hay 1 receta
   const [lastSearchedRecipe, setLastSearchedRecipe] = useState("");
+  const { toggleFavorite, isFavorite } = useFavoriteRecipes();
 
   // Detectar si es móvil
   useEffect(() => {
@@ -428,35 +431,72 @@ export default function RecipeAnalysisPage() {
                             >
                               {analysis.receta || "Análisis de receta"}
                             </motion.h4>
-                            {/* Botón de TTS */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (tts.status === "playing") {
-                                  tts.pause();
-                                } else if (tts.status === "paused") {
-                                  tts.resume();
-                                } else {
-                                  // Formatear texto para TTS
-                                  const ttsText = `
-                                    Receta: ${analysis.receta || 'Sin nombre'}.
-                                    Ingredientes: ${analysis.ingredientes?.join(', ') || 'No especificados'}.
-                                    Preparación: ${analysis.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
-                                  `.replace(/\s+/g, ' ').trim();
-                                  tts.speak(ttsText);
-                                }
-                              }}
-                              className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                              aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
-                            >
-                              {tts.status === "loading" ? (
-                                <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                              ) : tts.status === "playing" ? (
-                                <Pause className="w-5 h-5" />
-                              ) : (
-                                <Volume2 className="w-5 h-5" />
-                              )}
-                            </button>
+                            <div className="flex items-center gap-1">
+                              {/* Botón de TTS */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (tts.status === "playing") {
+                                    tts.pause();
+                                  } else if (tts.status === "paused") {
+                                    tts.resume();
+                                  } else {
+                                    // Formatear texto para TTS
+                                    const ttsText = `
+                                      Receta: ${analysis.receta || 'Sin nombre'}.
+                                      Ingredientes: ${analysis.ingredientes?.join(', ') || 'No especificados'}.
+                                      Preparación: ${analysis.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
+                                    `.replace(/\s+/g, ' ').trim();
+                                    tts.speak(ttsText);
+                                  }
+                                }}
+                                className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                                aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                              >
+                                {tts.status === "loading" ? (
+                                  <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                                ) : tts.status === "playing" ? (
+                                  <Pause className="w-5 h-5" />
+                                ) : (
+                                  <Volume2 className="w-5 h-5" />
+                                )}
+                              </button>
+
+                              {/* Botón de favorito */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const nombre = analysis.receta || "Análisis de receta";
+                                  const data = {
+                                    nombre,
+                                    ingredientes: (analysis.ingredientes || []) as string[],
+                                    pasos: (analysis.pasos || []) as string[],
+                                    tiempo: (analysis.tiempo || "") as string,
+                                  };
+                                  const wasFav = isFavorite(nombre);
+                                  const ok = await toggleFavorite(data);
+                                  if (!ok) {
+                                    setTempMessage("Inicia sesión para guardar favoritos");
+                                    setTempMessageType('error');
+                                    setTimeout(() => setTempMessage(null), 4000);
+                                    return;
+                                  }
+                                  setTempMessage(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+                                  setTempMessageType('success');
+                                  setTimeout(() => setTempMessage(null), 2500);
+                                }}
+                                className={`p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-green-50 dark:hover:bg-green-900/20`}
+                                aria-label={isFavorite(analysis.receta || "Análisis de receta") ? "Quitar de favoritos" : "Agregar a favoritos"}
+                              >
+                                <Heart
+                                  className={`w-5 h-5 transition-colors ${
+                                    isFavorite(analysis.receta || "Análisis de receta")
+                                      ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
+                                      : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+                                  }`}
+                                />
+                              </button>
+                            </div>
                           </div>
                           <motion.div 
                             className="flex items-center gap-2 text-xs md:text-sm text-gray-600 dark:text-gray-400"
