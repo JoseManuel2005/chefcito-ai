@@ -736,7 +736,7 @@ export default function IngredientsPage() {
                                                   }
                                                 } catch (e) {
                                                   console.error(e);
-                                                  setTempMessage("No pude generar la imagen");
+                                                  setTempMessage("No se pudo generar la imagen");
                                                   setTempMessageType("error");
                                                 } finally {
                                                   root.unmount();

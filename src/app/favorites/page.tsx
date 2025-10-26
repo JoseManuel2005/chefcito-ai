@@ -1,12 +1,95 @@
+// app/favorites/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useUserData } from "@/hooks/useUserData";
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
-import { Heart, ChefHat, Clock, Trash2 } from "lucide-react";
+import {
+  Heart,
+  ChefHat,
+  Clock,
+  Trash2,
+  Share2,
+  Copy,
+  MoreHorizontal,
+  Image as ImageIcon,
+} from "lucide-react";
+import * as htmlToImage from "html-to-image";
+import ShareCard from "@/components/ShareCard";
+
+function formatRecipeForText(r: any, index?: number) {
+  const title = r?.nombre || (typeof index === "number" ? `Receta ${index + 1}` : "Receta");
+  const time = r?.tiempo ? `⏱ ${r.tiempo}\n` : "";
+  const ingredientes = (r?.ingredientes || []).map((i: string) => `• ${i}`).join("\n");
+  const pasos = (r?.pasos || []).map((p: string, i: number) => `${i + 1}. ${p}`).join("\n");
+  return `*${title}*\n${time}\n*Ingredientes:*\n${ingredientes || "• —"}\n\n*Preparación:*\n${pasos || "—"}`;
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "absolute";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function shareViaWhatsAppDesktopOrWeb(text: string) {
+  const encoded = encodeURIComponent(text);
+  try {
+    window.open(`whatsapp://send?text=${encoded}`, "_blank");
+  } catch { /* noop */ }
+  setTimeout(() => {
+    if (document.visibilityState === "visible") {
+      window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer");
+    }
+  }, 900);
+}
+
+async function shareSmart(text: string, title: string) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  shareViaWhatsAppDesktopOrWeb(text);
+  return true;
+}
+
+// Generación PNG desde ShareCard oculto
+async function renderShareCardPNG(el: HTMLElement): Promise<Blob> {
+  const dataUrl = await htmlToImage.toPng(el, {
+    pixelRatio: 2,
+    cacheBust: true,
+    backgroundColor: "#ffffff",
+    quality: 1,
+  });
+  const res = await fetch(dataUrl);
+  return await res.blob();
+}
+
+function supportsFileShare() {
+  return !!(navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.png", { type: "image/png" })] }));
+}
 
 export default function FavoritesPage() {
   const { userPhoto } = useUserData();
@@ -14,8 +97,21 @@ export default function FavoritesPage() {
 
   const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [tempMessageType, setTempMessageType] = useState<"error" | "success">("success");
+  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
   const favoritesList = useMemo(() => Array.from(favorites.values()), [favorites]);
+
+  // Cerrar menú en click fuera
+  useEffect(() => {
+    if (openMenuIndex === null) return;
+    const handler = (e: MouseEvent) => {
+      const el = document.getElementById(`fav-menu-${openMenuIndex}`);
+      if (!el) return setOpenMenuIndex(null);
+      if (!el.contains(e.target as Node)) setOpenMenuIndex(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openMenuIndex]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -126,8 +222,129 @@ export default function FavoritesPage() {
                           <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
                             {recipe.nombre || `Receta ${index + 1}`}
                           </h4>
+
+                          {/* Botones de compartir */}
                           <div className="flex items-center gap-1">
-                            {/* Botón quitar de favoritos */}
+                            {/* Menú compacto (compartir) */}
+                            <div className="relative" id={`fav-menu-${index}`}>
+                              <motion.button
+                                type="button"
+                                onClick={() => setOpenMenuIndex((v) => (v === index ? null : index))}
+                                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.95 }}
+                                aria-label="Más opciones"
+                                title="Compartir / Copiar"
+                              >
+                                <MoreHorizontal className="w-5 h-5" />
+                              </motion.button>
+
+                              {openMenuIndex === index && (
+                                <div className="absolute z-50 right-0 mt-2 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                  <div className="p-2">
+                                    {/* Compartir texto */}
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setOpenMenuIndex(null);
+                                        const shareText = formatRecipeForText(recipe, index);
+                                        const ok = await shareSmart(shareText, recipe.nombre || `Receta ${index + 1}`);
+                                        if (ok) {
+                                          setTempMessage("Hoja de compartir abierta");
+                                          setTempMessageType("success");
+                                          setTimeout(() => setTempMessage(null), 1800);
+                                        }
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                                    >
+                                      <Share2 className="w-4 h-4" />
+                                      Compartir
+                                    </button>
+
+                                    {/* Copiar texto */}
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setOpenMenuIndex(null);
+                                        const shareText = formatRecipeForText(recipe, index);
+                                        const ok = await copyToClipboard(shareText);
+                                        setTempMessage(ok ? "Receta copiada" : "No se pudo copiar");
+                                        setTempMessageType(ok ? "success" : "error");
+                                        setTimeout(() => setTempMessage(null), 1800);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                                    >
+                                      <Copy className="w-4 h-4" />
+                                      Copiar receta
+                                    </button>
+
+                                    {/* Compartir como imagen */}
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setOpenMenuIndex(null);
+
+                                        // Montamos ShareCard temporalmente
+                                        const mount = document.createElement("div");
+                                        mount.style.position = "fixed";
+                                        mount.style.left = "-99999px";
+                                        document.body.appendChild(mount);
+
+                                        const ingredients = (recipe.ingredientes || []) as string[];
+                                        const steps = (recipe.pasos || []) as string[];
+
+                                        const { createRoot } = await import("react-dom/client");
+                                        const root = createRoot(mount);
+                                        root.render(
+                                          <ShareCard
+                                            title={recipe.nombre || `Receta ${index + 1}`}
+                                            time={recipe.tiempo || ""}
+                                            ingredients={ingredients}
+                                            steps={steps}
+                                          />
+                                        );
+                                        await new Promise((r) => setTimeout(r, 50));
+                                        const cardEl = mount.querySelector("#share-card") as HTMLElement;
+
+                                        try {
+                                          const blob = await renderShareCardPNG(cardEl);
+                                          const file = new File([blob], `${recipe.nombre || `receta-${index + 1}`}.png`, { type: "image/png" });
+                                          const caption = `Chefcito AI — ${recipe.nombre || `Receta ${index + 1}`}`;
+                                          if (supportsFileShare()) {
+                                            await navigator.share({ files: [file], text: caption, title: recipe.nombre || `Receta ${index + 1}` });
+                                            setTempMessage("Compartiendo imagen…");
+                                            setTempMessageType("success");
+                                          } else {
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement("a");
+                                            a.href = url;
+                                            a.download = `${recipe.nombre || `receta-${index + 1}`}.png`;
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                            setTempMessage("Imagen descargada. ¡Lista para compartir!");
+                                            setTempMessageType("success");
+                                          }
+                                        } catch (e) {
+                                          console.error(e);
+                                          setTempMessage("No se pudo generar la imagen");
+                                          setTempMessageType("error");
+                                        } finally {
+                                          root.unmount();
+                                          document.body.removeChild(mount);
+                                          setTimeout(() => setTempMessage(null), 2500);
+                                        }
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                                    >
+                                      <ImageIcon className="w-4 h-4" />
+                                      Compartir como imagen
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Quitar de favoritos (intacto) */}
                             <motion.button
                               type="button"
                               onClick={async () => {
@@ -155,6 +372,7 @@ export default function FavoritesPage() {
                             </motion.button>
                           </div>
                         </div>
+
                         <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 md:w-4 md:h-4" />
@@ -170,7 +388,7 @@ export default function FavoritesPage() {
                           Ingredientes:
                         </h5>
                         <ul className="space-y-1 md:space-y-2">
-                          {(recipe.ingredientes || []).map((ing, i) => (
+                          {(recipe.ingredientes || []).map((ing: string, i: number) => (
                             <li key={i} className="flex items-center gap-3 text-gray-700 dark:text-gray-300 text-sm md:text-base">
                               <div className="w-1.5 h-1.5 bg-yellow-400 dark:bg-yellow-500 rounded-full shrink-0" />
                               {ing}
@@ -184,7 +402,7 @@ export default function FavoritesPage() {
                           Preparación:
                         </h5>
                         <ol className="space-y-1 md:space-y-2">
-                          {(recipe.pasos || []).map((paso, i) => (
+                          {(recipe.pasos || []).map((paso: string, i: number) => (
                             <li key={i} className="flex gap-2 md:gap-4 text-gray-700 dark:text-gray-300 text-sm md:text-base">
                               <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
                                 {i + 1}
