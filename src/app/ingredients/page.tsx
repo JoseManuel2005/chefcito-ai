@@ -111,7 +111,6 @@ async function renderShareCardPNG(el: HTMLElement): Promise<Blob> {
 
 function supportsFileShare() {
   // Android Chrome soporta Web Share Level 2; iOS va mejorando
-  // @ts-ignore
   return !!(navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.png", { type: "image/png" })] }));
 }
 
@@ -721,9 +720,7 @@ export default function IngredientsPage() {
                                                   const blob = await renderShareCardPNG(cardEl);
                                                   const file = new File([blob], `${nombreReceta}.png`, { type: "image/png" });
                                                   const caption = `Chefcito AI — ${nombreReceta}`;
-                                                  // @ts-ignore
                                                   if (supportsFileShare()) {
-                                                    // @ts-ignore
                                                     await navigator.share({ files: [file], text: caption, title: nombreReceta });
                                                     setTempMessage("Compartiendo imagen…");
                                                     setTempMessageType("success");
@@ -756,7 +753,7 @@ export default function IngredientsPage() {
                                         </div>
                                       )}
                                     </div>
-                                    
+
                                     {/* Audio TTS */}
                                     <motion.button
                                       type="button"
