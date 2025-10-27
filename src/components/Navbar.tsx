@@ -61,7 +61,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
 
   return (
     <>
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 backdrop-blur-sm mb-5 transition-colors duration-300">
+      <nav className="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 backdrop-blur-sm mb-5 transition-colors duration-300">
         <div className="max-w-430 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-18">
             {/* Logo */}

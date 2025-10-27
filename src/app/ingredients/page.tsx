@@ -16,103 +16,29 @@ import {
   Volume2,
   Pause,
   Heart,
-  Share2,
-  Copy,
   MoreHorizontal,
-  Image as ImageIcon
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useTTS } from '@/hooks/useTTS';
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
+import { useTempMessage } from "@/hooks/useTempMessage";
+import { useMenuToggle } from "@/hooks/useMenuToggle";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import * as htmlToImage from "html-to-image";
-import ShareCard from "@/components/ShareCard";
-
-/**
- * Helpers de compartir/copiar (formato legible)
- */
-function formatRecipeForText(r: any, index: number) {
-  const title = r?.nombre || `Receta ${index + 1}`;
-  const time = r?.tiempo ? `⏱ ${r.tiempo}\n` : "";
-  const ingredientes = (r?.ingredientes || [])
-    .map((i: string) => `• ${i}`)
-    .join("\n");
-  const pasos = (r?.pasos || [])
-    .map((p: string, i: number) => `${i + 1}. ${p}`)
-    .join("\n");
-
-  // Para WhatsApp / texto: negritas con *...*, saltos con \n
-  return `*${title}*\n${time}\n*Ingredientes:*\n${ingredientes}\n\n*Preparación:*\n${pasos}`;
-}
-
-async function copyToClipboard(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "absolute";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
-
-// Abre WhatsApp Desktop si existe; si no, cae a WhatsApp Web
-function shareViaWhatsAppDesktopOrWeb(text: string) {
-  const encoded = encodeURIComponent(text);
-
-  try {
-    window.open(`whatsapp://send?text=${encoded}`, "_blank");
-  } catch { /* noop */ }
-
-  // Fallback a Web si no se pudo abrir Desktop o si el navegador bloquea popups
-  setTimeout(() => {
-    if (document.visibilityState === "visible") {
-      window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer");
-    }
-  }, 900);
-}
-
-async function shareSmart(text: string, title: string) {
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, text });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  shareViaWhatsAppDesktopOrWeb(text);
-  return true;
-}
-
-// Crea una imagen PNG desde el componente oculto de la tarjeta
-async function renderShareCardPNG(el: HTMLElement): Promise<Blob> {
-  const dataUrl = await htmlToImage.toPng(el, {
-    pixelRatio: 2,
-    cacheBust: true,
-    backgroundColor: "#ffffff",
-    quality: 1,
-  });
-  const res = await fetch(dataUrl);
-  return await res.blob();
-}
-
-function supportsFileShare() {
-  // Android Chrome soporta Web Share Level 2; iOS va mejorando
-  return !!(navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.png", { type: "image/png" })] }));
-}
+import TempMessageToast from "@/components/TempMessageToast";
+import ShareMenu from "@/components/ShareMenu";
+import {
+  formatRecipeForText,
+  copyToClipboard,
+  shareSmart,
+  shareRecipeAsImage,
+} from "@/utils/shareUtils";
+import {
+  containerVariants,
+  itemVariants,
+  mobileRecipeVariants,
+  desktopRecipeVariants,
+} from "@/utils/animations";
 
 /**
  * Página principal para "Ingredientes → Recetas"
@@ -127,28 +53,14 @@ export default function IngredientsPage() {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [tempMessage, setTempMessage] = useState<string | null>(null);
-  const [tempMessageType, setTempMessageType] = useState<'error' | 'success'>('error');
   const [voiceTranscription, setVoiceTranscription] = useState<string>("");
   const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
   const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
 
-  // Menú compacto: qué tarjeta tiene el menú abierto
-  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
-
-  // Cierra el menú al hacer click fuera
-  useEffect(() => {
-    if (openMenuIndex === null) return;
-    const handler = (e: MouseEvent) => {
-      const el = document.getElementById(`menu-${openMenuIndex}`);
-      if (!el) return setOpenMenuIndex(null);
-      const target = e.target as Node;
-      if (!el.contains(target)) setOpenMenuIndex(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [openMenuIndex]);
+  // Hooks personalizados
+  const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
+  const { openMenuIndex, setOpenMenuIndex } = useMenuToggle("menu");
 
   // Favoritos persistidos en Firestore
   const { toggleFavorite: toggleFavoriteDb, isFavorite } = useFavoriteRecipes();
@@ -265,9 +177,7 @@ export default function IngredientsPage() {
 
       if (response.status === 429) {
         const errorData = await response.json();
-        setTempMessage(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.");
-        setTempMessageType('error');
-        setTimeout(() => setTempMessage(null), 5000);
+        showError(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.", 5000);
         return;
       }
 
@@ -278,9 +188,7 @@ export default function IngredientsPage() {
       if (data.warning) setWarningMessage(data.warning);
     } catch (error) {
       console.error("Error:", error);
-      setTempMessage("Hubo un error al generar las recetas. Por favor, intenta de nuevo.");
-      setTempMessageType('error');
-      setTimeout(() => setTempMessage(null), 5000);
+      showError("Hubo un error al generar las recetas. Por favor, intenta de nuevo.", 5000);
     } finally {
       setLoading(false);
     }
@@ -311,27 +219,9 @@ export default function IngredientsPage() {
     }
   }, [recipes, loading, isMobile]);
 
-  const mobileRecipeVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 30 } },
-  };
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
-  };
-  const desktopRecipeVariants = {
-    hidden: { opacity: 0, x: 50 },
-    visible: { opacity: 1, x: 0, transition: { type: "spring" as const, stiffness: 300, damping: 30 } },
-    exit: { opacity: 0, x: 50, transition: { duration: 0.2 } },
-  };
-
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -346,7 +236,7 @@ export default function IngredientsPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
         <div className={`${hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"} mx-auto transition-all duration-300 pt-0 md:pt-2`}>
@@ -382,7 +272,7 @@ export default function IngredientsPage() {
             >
               <motion.div
                 layout
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
+                className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
@@ -401,7 +291,7 @@ export default function IngredientsPage() {
                               type="text"
                               value={ingredient.name}
                               onChange={(e) => handleChangeIngredientName(e.target.value, index)}
-                              className="flex-1 w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
+                              className="flex-1 w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
                               placeholder="Ej: tomate, cebolla, pollo..."
                             />
 
@@ -412,7 +302,7 @@ export default function IngredientsPage() {
                                   type="date"
                                   value={ingredient.expiry || ""}
                                   onChange={(e) => handleChangeIngredientExpiry(e.target.value, index)}
-                                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base cursor-pointer"
+                                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base cursor-pointer"
                                   aria-label="Fecha de vencimiento (opcional)"
                                 />
                               </div>
@@ -493,7 +383,7 @@ export default function IngredientsPage() {
                     </div>
                   ) : (
                     <div className="pt-2 flex items-center gap-2">
-                      <div className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg text-sm cursor-not-allowed">
+                      <div className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-500 rounded-lg text-sm cursor-not-allowed">
                         Habla tus ingredientes usando el micrófono
                       </div>
                       <VoiceRecorder
@@ -552,7 +442,7 @@ export default function IngredientsPage() {
                     <motion.button
                       type="button"
                       onClick={resetForm}
-                      className="px-6 py-3 border cursor-pointer border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm md:text-base"
+                      className="px-6 py-3 border cursor-pointer border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm md:text-base"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -613,28 +503,10 @@ export default function IngredientsPage() {
                         const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
                         const isFav = isFavorite(nombreReceta);
 
-                        const shareText = formatRecipeForText(recipeItem, index);
-
-                        const doShare = async () => {
-                          const ok = await shareSmart(shareText, nombreReceta);
-                          if (ok) {
-                            setTempMessage("Hoja de compartir abierta");
-                            setTempMessageType("success");
-                            setTimeout(() => setTempMessage(null), 1800);
-                          }
-                        };
-
-                        const doCopy = async () => {
-                          const ok = await copyToClipboard(shareText);
-                          setTempMessage(ok ? "Receta copiada" : "No se pudo copiar");
-                          setTempMessageType(ok ? "success" : "error");
-                          setTimeout(() => setTempMessage(null), 1800);
-                        };
-
                         return (
                           <motion.div
                             key={index}
-                            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
+                            className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 + index * 0.1 }}
@@ -656,11 +528,11 @@ export default function IngredientsPage() {
 
                                   {/* Botonera: Audio / Menú / Favorito */}
                                   <div className="flex items-center gap-1">
-                                                                        {/* MENÚ COMPACTO (Share/Copy/Image) */}
+                                    {/* MENÚ COMPACTO (Share/Copy/Image) */}
                                     <div className="relative" id={`menu-${index}`}>
                                       <motion.button
                                         type="button"
-                                        onClick={() => setOpenMenuIndex((v) => v === index ? null : index)}
+                                        onClick={() => setOpenMenuIndex((v: number | null) => v === index ? null : index)}
                                         className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
@@ -671,86 +543,24 @@ export default function IngredientsPage() {
                                       </motion.button>
 
                                       {openMenuIndex === index && (
-                                        <div className="absolute z-50 right-0 mt-2 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                                          <div className="p-2">
-                                            <button
-                                              type="button"
-                                              onClick={async () => { setOpenMenuIndex(null); await doShare(); }}
-                                              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-                                            >
-                                              <Share2 className="w-4 h-4" />
-                                              Compartir
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={async () => { setOpenMenuIndex(null); await doCopy(); }}
-                                              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-                                            >
-                                              <Copy className="w-4 h-4" />
-                                              Copiar receta
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={async () => {
-                                                setOpenMenuIndex(null);
-                                                const mount = document.createElement("div");
-                                                mount.style.position = "fixed";
-                                                mount.style.left = "-99999px";
-                                                document.body.appendChild(mount);
-
-                                                const ingredients = (recipeItem.ingredientes || []) as string[];
-                                                const steps = (recipeItem.pasos || []) as string[];
-
-                                                const { createRoot } = await import("react-dom/client");
-                                                const root = createRoot(mount);
-                                                root.render(
-                                                  <ShareCard
-                                                    title={nombreReceta}
-                                                    time={recipeItem.tiempo || ""}
-                                                    ingredients={ingredients}
-                                                    steps={steps}
-                                                  />
-                                                );
-                                                await new Promise((r) => setTimeout(r, 50));
-                                                const cardEl = mount.querySelector("#share-card") as HTMLElement;
-
-                                                try {
-                                                  const blob = await renderShareCardPNG(cardEl);
-                                                  const file = new File([blob], `${nombreReceta}.png`, { type: "image/png" });
-                                                  const caption = `Chefcito AI — ${nombreReceta}`;
-                                                  if (supportsFileShare()) {
-                                                    await navigator.share({ files: [file], text: caption, title: nombreReceta });
-                                                    setTempMessage("Compartiendo imagen…");
-                                                    setTempMessageType("success");
-                                                  } else {
-                                                    const url = URL.createObjectURL(blob);
-                                                    const a = document.createElement("a");
-                                                    a.href = url;
-                                                    a.download = `${nombreReceta}.png`;
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                    setTempMessage("Imagen descargada. ¡Lista para compartir!");
-                                                    setTempMessageType("success");
-                                                  }
-                                                } catch (e) {
-                                                  console.error(e);
-                                                  setTempMessage("No se pudo generar la imagen");
-                                                  setTempMessageType("error");
-                                                } finally {
-                                                  root.unmount();
-                                                  document.body.removeChild(mount);
-                                                  setTimeout(() => setTempMessage(null), 2500);
-                                                }
-                                              }}
-                                              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-                                            >
-                                              <ImageIcon className="w-4 h-4" />
-                                              Compartir como imagen 
-                                            </button>
-                                          </div>
-                                        </div>
+                                        <ShareMenu
+                                          onShareText={async () => {
+                                            setOpenMenuIndex(null);
+                                            const shareText = formatRecipeForText(recipeItem, index);
+                                            const ok = await shareSmart(shareText, nombreReceta);
+                                            if (ok) showSuccess("Hoja de compartir abierta", 1800);
+                                          }}
+                                          onCopyText={async () => {
+                                            setOpenMenuIndex(null);
+                                            const shareText = formatRecipeForText(recipeItem, index);
+                                            const ok = await copyToClipboard(shareText);
+                                            ok ? showSuccess("Receta copiada", 1800) : showError("No se pudo copiar", 1800);
+                                          }}
+                                          onShareImage={async () => {
+                                            setOpenMenuIndex(null);
+                                            await shareRecipeAsImage(recipeItem, index, showSuccess, showError);
+                                          }}
+                                        />
                                       )}
                                     </div>
 
@@ -794,14 +604,10 @@ export default function IngredientsPage() {
                                         const wasFav = isFav;
                                         const ok = await toggleFavoriteDb(data);
                                         if (!ok) {
-                                          setTempMessage("Inicia sesión para guardar favoritos");
-                                          setTempMessageType('error');
-                                          setTimeout(() => setTempMessage(null), 4000);
+                                          showError("Inicia sesión para guardar favoritos", 4000);
                                           return;
                                         }
-                                        setTempMessage(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
-                                        setTempMessageType('success');
-                                        setTimeout(() => setTempMessage(null), 2500);
+                                        showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
                                       }}
                                       className={`p-1.5 rounded-full transition-colors cursor-pointer group ${isFav ? "hover:bg-yellow-50 dark:hover:bg-yellow-900/20" : "hover:bg-yellow-50 dark:hover:bg-yellow-900/20"}`}
                                       whileHover={{ scale: 1.1 }}
@@ -908,13 +714,7 @@ export default function IngredientsPage() {
         </div>
       </div>
 
-      {tempMessage && (
-        <div
-          className={`fixed top-24 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${tempMessageType === 'error' ? 'bg-red-500 text-white dark:bg-red-600' : 'bg-green-500 text-white dark:bg-green-600'}`}
-        >
-          {tempMessage}
-        </div>
-      )}
+      <TempMessageToast message={tempMessage} type={tempMessageType} />
 
       <Footer />
     </main>
