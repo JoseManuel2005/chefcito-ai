@@ -3,7 +3,7 @@ import { ChefHat } from "lucide-react";
 
 const Footer = ({ className }: { className?: string }) => {
   return (
-    <footer className={`w-full border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 py-6 transition-colors duration-300 ${className}`}>
+    <footer className={`w-full border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 py-6 transition-colors duration-300 ${className}`}>
       <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-6">
         
         {/* Links */}

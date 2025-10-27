@@ -33,7 +33,7 @@ export default function HomePage() {
   // Muestra un estado de carga mientras se obtienen los datos del usuario.
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -49,7 +49,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
       {/* Barra de navegación con foto del usuario (puede ser null si no está autenticado) */}
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-6">
@@ -70,7 +70,7 @@ export default function HomePage() {
             {/* Botón: Modo "Ingredientes → Recetas" */}
             <button
               onClick={() => handleNavigation("/ingredients")}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-left hover:border-yellow-200 dark:hover:border-yellow-600 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-left hover:border-yellow-200 dark:hover:border-yellow-600 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl flex items-center justify-center group-hover:bg-yellow-100 dark:group-hover:bg-yellow-900/30 transition-colors">
@@ -98,7 +98,7 @@ export default function HomePage() {
             {/* Botón: Modo "Receta → Análisis" */}
             <button
               onClick={() => handleNavigation("/recipe-analysis")}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-left hover:border-green-200 dark:hover:border-green-600 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-left hover:border-green-200 dark:hover:border-green-600 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
@@ -129,7 +129,7 @@ export default function HomePage() {
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               {/* Card: Tus preferencias (si existen) */}
               {userPreferences && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Tus preferencias
                   </h3>
@@ -175,7 +175,7 @@ export default function HomePage() {
               )}
 
               {/* Card: Tus recetas favoritos */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Tus recetas favoritas
                 </h3>

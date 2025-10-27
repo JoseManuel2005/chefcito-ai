@@ -8,7 +8,7 @@ export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <main className="flex flex-col lg:flex-row min-h-screen font-sans bg-white dark:bg-gray-900 transition-colors duration-300">
+    <main className="flex flex-col lg:flex-row min-h-screen font-sans bg-white dark:bg-gray-950 transition-colors duration-300">
       {/* Toggle de tema en esquina superior derecha */}
       <button
         onClick={toggleTheme}
@@ -34,8 +34,8 @@ export default function LoginPage() {
       </section>
 
       {/* Sección Derecha */}
-      <section className="w-full lg:w-[54%] flex justify-center items-center p-6 sm:p-8 lg:p-10 bg-white dark:bg-gray-900 lg:rounded-tl-[60px] lg:rounded-bl-[60px] lg:-ml-[60px] z-30 lg:shadow-[-8px_0_24px_rgba(0,0,0,0.04)] relative min-h-[60vh] lg:min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 lg:p-12 shadow-[0_16px_48px_rgba(0,0,0,0.28)] text-center max-w-[400px] w-full mx-4 transition-colors duration-300">
+      <section className="w-full lg:w-[54%] flex justify-center items-center p-6 sm:p-8 lg:p-10 bg-white dark:bg-gray-950 lg:rounded-tl-[60px] lg:rounded-bl-[60px] lg:-ml-[60px] z-30 lg:shadow-[-8px_0_24px_rgba(0,0,0,0.04)] relative min-h-[60vh] lg:min-h-screen">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 sm:p-8 lg:p-12 shadow-[0_16px_48px_rgba(0,0,0,0.28)] text-center max-w-[400px] w-full mx-4 transition-colors duration-300">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#333] dark:text-white mb-4 lg:mb-5">¡Bienvenido!</h2>
           <p className="text-base sm:text-lg text-[#666] dark:text-gray-400 mb-6 lg:mb-10 leading-relaxed">Inicia sesión para comenzar</p>
           <GoogleSignInButton />
