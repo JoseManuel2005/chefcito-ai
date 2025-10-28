@@ -13,6 +13,7 @@ import {
   Pause,
   Heart,
   MoreHorizontal,
+  Share2,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
@@ -165,13 +166,13 @@ export default function RecipeAnalysisPage() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <motion.div
               className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-5"
-              animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+              animate={{ rotate: 0, scale: [1, 1.1, 1] }}
               transition={{ rotate: { duration: 2, repeat: Infinity, ease: "linear" }, scale: { duration: 1, repeat: Infinity } }}
             >
               <BookOpen className="w-8 h-8 text-white" />
@@ -186,14 +187,20 @@ export default function RecipeAnalysisPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
         <motion.div
           className={`${hasSearched && !isMobile ? 'max-w-7xl' : 'max-w-4xl'} mx-auto transition-all duration-300 pt-0 md:pt-2`}
           initial={false}
           animate={{ maxWidth: hasSearched && !isMobile ? '1280px' : '896px' }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 600,   
+            damping: 35,       
+            mass: 0.5,         
+            bounce: 0.1        
+          }}
         >
           {/* Header */}
           <motion.div
@@ -304,7 +311,7 @@ export default function RecipeAnalysisPage() {
 
             {/* Analysis Section */}
             <AnimatePresence mode="popLayout">
-              {(hasSearched && analysis) && (
+              {hasSearched && (
                 <motion.div
                   key="analysis-section"
                   id="analysis-section"
@@ -314,7 +321,44 @@ export default function RecipeAnalysisPage() {
                   animate="visible"
                   exit="exit"
                 >
-                  {analysis ? (
+                  {loading ? (
+                    // Estado de carga - MOSTRAR ESTE ESTADO
+                    <motion.div 
+                      className="flex items-center justify-center py-8 md:py-12" 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }}
+                    >
+                      <div className="text-center">
+                        <motion.div
+                          className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-green-500 rounded-full mb-3 md:mb-4"
+                          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+                          transition={{ 
+                            rotate: { duration: 2, repeat: Infinity, ease: "linear" }, 
+                            scale: { duration: 1, repeat: Infinity } 
+                          }}
+                        >
+                          <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                        </motion.div>
+                        <motion.p 
+                          className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base" 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }} 
+                          transition={{ delay: 0.2 }}
+                        >
+                          Analizando receta...
+                        </motion.p>
+                        <motion.p 
+                          className="text-gray-500 dark:text-gray-500 text-xs mt-2" 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }} 
+                          transition={{ delay: 0.4 }}
+                        >
+                          Esto puede tomar unos segundos
+                        </motion.p>
+                      </div>
+                    </motion.div>
+                  ) : analysis ? (
+                    // Estado con análisis completado
                     <motion.div
                       className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                       initial={{ opacity: 0 }}
@@ -357,7 +401,7 @@ export default function RecipeAnalysisPage() {
                                   aria-label="Más opciones"
                                   title="Compartir / Copiar"
                                 >
-                                  <MoreHorizontal className="w-5 h-5" />
+                                  <Share2 className="w-5 h-5" />
                                 </motion.button>
 
                                 {menuOpen && (
@@ -482,7 +526,7 @@ export default function RecipeAnalysisPage() {
                           {/* Pasos */}
                           {analysis.pasos && analysis.pasos.length > 0 && (
                             <motion.div initial={{ opacity: 0, y: isMobile ? 20 : 0 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-                              <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">Cómo prepararla:</h5>
+                              <h5 className="font-semibold text-gray-900 mt-10 dark:text-white mb-3 md:mb-4 text-sm md:text-base">Cómo prepararla:</h5>
                               <ol className="space-y-2">
                                 {(analysis.pasos || []).map((paso: string, i: number) => (
                                   <motion.li
@@ -519,21 +563,6 @@ export default function RecipeAnalysisPage() {
                             </motion.div>
                           </motion.div>
                         )}
-                      </div>
-                    </motion.div>
-                  ) : loading ? (
-                    <motion.div className="flex items-center justify-center py-8 md:py-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <div className="text-center">
-                        <motion.div
-                          className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-green-500 rounded-full mb-3 md:mb-4"
-                          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-                          transition={{ rotate: { duration: 2, repeat: Infinity, ease: "linear" }, scale: { duration: 1, repeat: Infinity } }}
-                        >
-                          <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        </motion.div>
-                        <motion.p className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                          Analizando receta...
-                        </motion.p>
                       </div>
                     </motion.div>
                   ) : null}

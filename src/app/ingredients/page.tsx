@@ -16,7 +16,7 @@ import {
   Volume2,
   Pause,
   Heart,
-  MoreHorizontal,
+  Share2,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useTTS } from '@/hooks/useTTS';
@@ -221,7 +221,7 @@ export default function IngredientsPage() {
 
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
+      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
         <Navbar userPhoto={userPhoto} />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -236,7 +236,7 @@ export default function IngredientsPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
       <Navbar userPhoto={userPhoto} />
       <div className="flex-grow p-4 md:p-6">
         <div className={`${hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"} mx-auto transition-all duration-300 pt-0 md:pt-2`}>
@@ -539,7 +539,7 @@ export default function IngredientsPage() {
                                         aria-label="Más opciones"
                                         title="Compartir / Copiar"
                                       >
-                                        <MoreHorizontal className="w-5 h-5" />
+                                        <Share2 className="w-5 h-5" />
                                       </motion.button>
 
                                       {openMenuIndex === index && (
