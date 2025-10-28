@@ -58,7 +58,7 @@ export default function GoogleSignInButton() {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="w-full bg-[#ffd700] text-[#333] font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl flex items-center justify-center gap-3 mb-6 lg:mb-8 transition-all duration-300 hover:bg-[#ffcc00] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] text-sm sm:text-base disabled:opacity-70 disabled:cursor-not-allowed"
+      className="w-full bg-[#ffd700] text-[#333] font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-xl flex items-center justify-center gap-3 mb-6 lg:mb-8 transition-all duration-300 hover:bg-[#ffcc00] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] text-sm sm:text-base disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
       aria-label="Continuar con Google"
     >
       <svg

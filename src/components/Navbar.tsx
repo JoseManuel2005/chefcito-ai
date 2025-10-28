@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen } from "lucide-react";
+import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen, Heart } from "lucide-react";
 import { auth } from "@/lib/firebaseClient";
 import { useTheme } from "@/contexts/ThemeContext";
 import UserGuide from "@/components/UserGuide";
@@ -61,7 +61,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
 
   return (
     <>
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 backdrop-blur-sm mb-5 transition-colors duration-300">
+      <nav className="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 backdrop-blur-sm mb-5 transition-colors duration-300">
         <div className="max-w-430 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-18">
             {/* Logo */}
@@ -106,7 +106,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-3 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
+                  className="flex items-center gap-3 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors duration-200 cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
                     {userPhoto ? (
@@ -141,6 +141,14 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                     >
                       <Settings className="w-4 h-4" />
                       Preferencias
+                    </button>
+
+                    <button
+                      onClick={() => { router.push("/favorites"); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Recetas Favoritas
                     </button>
 
                     <div className="border-t border-gray-100 dark:border-gray-600 my-1"></div>
@@ -240,6 +248,14 @@ export default function Navbar({ userPhoto }: NavbarProps) {
                 >
                   <Settings className="w-4 h-4" />
                   Preferencias
+                </button>
+
+                <button
+                  onClick={() => { router.push("/favorites"); setIsMenuOpen(false); }}
+                  className="w-full text-left px-3 py-3 text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg font-medium transition-all duración-200 flex items-center gap-3"
+                >
+                  <Heart className="w-4 h-4" />
+                  Recetas Favoritas
                 </button>
 
                 <button

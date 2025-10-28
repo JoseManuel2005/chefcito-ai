@@ -21,7 +21,6 @@ import {
   Wheat,
   Soup,
   Salad,
-  Beef,
   Croissant,
   Hamburger,
   Leaf,
@@ -181,7 +180,7 @@ export default function OnboardingPage() {
   // 👇 Agrega un estado de loading al inicio
   if (loading) {
     return (
-      <main className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
+      <main className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center transition-colors duration-300 background-grid">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-4xl mb-5">
             <ChefHat className="w-8 h-8 text-white animate-pulse" />
@@ -193,7 +192,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-6 transition-colors duration-300">
+    <main className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center p-6 transition-colors duration-300 background-grid">
       <div className="w-full max-w-lg">
 
         {/* Header */}
@@ -224,7 +223,7 @@ export default function OnboardingPage() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${currentStep >= step
                     ? "bg-yellow-400 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    : "bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                     }`}
                 >
                   {currentStep > step ? <Check className="w-4 h-4" /> : step}
@@ -243,7 +242,7 @@ export default function OnboardingPage() {
 
         {/* Form Card */}
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 transition-colors duration-300">
           <form onSubmit={handleSubmit}>
             {/* Step 1: Alergias */}
             {currentStep === 1 && (
@@ -268,7 +267,7 @@ export default function OnboardingPage() {
                         type="text"
                         value={value}
                         onChange={(e) => handleChangeAllergy(e.target.value, index)}
-                        className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors placeholder-gray-500 dark:placeholder-gray-400"
+                        className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Ej: maní, lactosa, gluten..."
                       />
                       {allergies.length > 1 && (
@@ -355,7 +354,7 @@ export default function OnboardingPage() {
                           type="text"
                           value={value}
                           onChange={(e) => handleChangeCustomCuisine(e.target.value, index)}
-                          className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors placeholder-gray-500 dark:placeholder-gray-400"
+                          className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors placeholder-gray-500 dark:placeholder-gray-400"
                           placeholder="Ej: Tailandesa, Peruana, Fusión..."
                         />
                         {customCuisines.length > 1 && (
@@ -421,7 +420,7 @@ export default function OnboardingPage() {
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 text-black dark:text-white rounded-lg focus:ring-1 focus:border-yellow-400 focus:ring-yellow-400 transition-colors focus:outline-none appearance-none bg-white dark:bg-gray-700 cursor-pointer"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 text-black dark:text-white rounded-lg focus:ring-1 focus:border-yellow-400 focus:ring-yellow-400 transition-colors focus:outline-none appearance-none bg-white dark:bg-gray-800 cursor-pointer"
                   >
                     <option value="">Selecciona tu país</option>
                     {countries.map((countryOption) => (
