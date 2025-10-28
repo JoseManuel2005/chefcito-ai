@@ -8,8 +8,7 @@ import {
   setDoc, 
   deleteDoc, 
   collection, 
-  getDocs,
-  serverTimestamp 
+  getDocs, 
 } from "firebase/firestore";
 
 export interface FavoriteRecipe {

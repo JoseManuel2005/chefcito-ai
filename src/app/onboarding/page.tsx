@@ -21,7 +21,6 @@ import {
   Wheat,
   Soup,
   Salad,
-  Beef,
   Croissant,
   Hamburger,
   Leaf,

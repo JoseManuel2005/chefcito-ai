@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder';
 import {
   BookOpen,
@@ -12,7 +12,6 @@ import {
   Volume2,
   Pause,
   Heart,
-  MoreHorizontal,
   Share2,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
@@ -443,7 +442,7 @@ export default function RecipeAnalysisPage() {
                                     tts.speak(ttsText);
                                   }
                                 }}
-                                className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                                className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer"
                                 aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
                               >
                                 {tts.status === "loading" ? (
