@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ChefHat, Clock, Users, X } from "lucide-react";
+import { ChefHat, Clock, Users, X, Volume2, Pause } from "lucide-react";
+import { useTTS } from "@/hooks/useTTS";
 
 export type Recipe = {
   id: string;
@@ -19,7 +20,31 @@ type RecipeDetailModalProps = {
 };
 
 export default function RecipeDetailModal({ recipe, isOpen, onClose, index }: RecipeDetailModalProps) {
+  const tts = useTTS();
+
   if (!isOpen || !recipe) return null;
+
+  // Generar el texto para TTS
+  const ttsText = `
+    Receta: ${recipe.nombre || 'Sin nombre'}.
+    Ingredientes: ${recipe.ingredientes?.join(', ') || 'No especificados'}.
+    Preparación: ${recipe.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
+  `.replace(/\s+/g, ' ').trim();
+
+  const handleTTSToggle = () => {
+    if (tts.status === "playing") {
+      tts.pause();
+    } else if (tts.status === "paused") {
+      tts.resume();
+    } else {
+      tts.speak(ttsText);
+    }
+  };
+
+  const handleClose = () => {
+    tts.stop();
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -29,7 +54,7 @@ export default function RecipeDetailModal({ recipe, isOpen, onClose, index }: Re
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -60,12 +85,38 @@ export default function RecipeDetailModal({ recipe, isOpen, onClose, index }: Re
                   </div>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              
+              {/* Botones de Acción */}
+              <div className="flex items-center gap-2">
+                {/* Botón de TTS (Escuchar) */}
+                <motion.button
+                  type="button"
+                  onClick={handleTTSToggle}
+                  className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                  title={tts.status === "playing" ? "Pausar" : "Escuchar receta"}
+                >
+                  {tts.status === "loading" ? (
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : tts.status === "playing" ? (
+                    <Pause className="w-6 h-6" />
+                  ) : (
+                    <Volume2 className="w-6 h-6" />
+                  )}
+                </motion.button>
+
+                {/* Botón de Cerrar */}
+                <button
+                  onClick={handleClose}
+                  className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  aria-label="Cerrar"
+                  title="Cerrar"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Contenido del Modal */}
