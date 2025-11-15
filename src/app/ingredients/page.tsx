@@ -161,7 +161,20 @@ export default function IngredientsPage() {
   // 🔹 NUEVO: Guardar ingredientes de imagen en el flujo principal
   const handleSaveImageIngredients = () => {
     const newIngredients = ingredientsFromImage.map(name => ({ name, expiry: null }));
-    setIngredients(prev => [...prev, ...newIngredients]);
+
+    setIngredients(prev => {
+      // Si el primer ingrediente está vacío, reemplazarlo con el primero de la lista
+      const isFirstEmpty = prev.length === 1 && prev[0].name.trim() === "";
+      if (isFirstEmpty && newIngredients.length > 0) {
+        // Reemplazar el placeholder vacío con el primer ingrediente de la imagen
+        const [firstFromImage, ...restFromImage] = newIngredients;
+        return [firstFromImage, ...restFromImage];
+      } else {
+        // Si ya hay ingredientes reales, agregar al final
+        return [...prev, ...newIngredients];
+      }
+    });
+
     setShowImageChips(false);
     setIngredientsFromImage([]);
   };
