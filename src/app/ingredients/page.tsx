@@ -40,6 +40,10 @@ import {
   desktopRecipeVariants,
 } from "@/utils/animations";
 
+// 🔹 NUEVO: Importar componentes de visión
+import ImageUploadInput from '@/components/ImageUploadInput';
+import EditableChips from '@/components/EditableChips';
+
 /**
  * Página principal para "Ingredientes → Recetas"
  */
@@ -71,6 +75,10 @@ export default function IngredientsPage() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // 🔹 NUEVO: Estado para ingredientes de imagen
+  const [ingredientsFromImage, setIngredientsFromImage] = useState<string[]>([]);
+  const [showImageChips, setShowImageChips] = useState(false);
 
   const handleAddIngredient = () => {
     setWarningMessage(null);
@@ -113,6 +121,49 @@ export default function IngredientsPage() {
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // 🔹 NUEVA función en ingredients/page.tsx
+  const handleOCRText = async (rawText: string) => {
+    setLoading(true); // opcional: activar loading en UI
+    try {
+      // Paso 1: enviar a limpieza con OpenAI
+      const res = await fetch('/api/clean-ingredients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          rawText, 
+          userPreferences: userPreferences
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al limpiar ingredientes');
+      }
+
+      if (!Array.isArray(data.ingredients) || data.ingredients.length === 0) {
+        showError('No se detectaron ingredientes válidos en la imagen.');
+        return;
+      }
+
+      setIngredientsFromImage(data.ingredients);
+      setShowImageChips(true);
+    } catch (err: any) {
+      console.error(err);
+      showError(err.message || 'No se pudo procesar la imagen correctamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 NUEVO: Guardar ingredientes de imagen en el flujo principal
+  const handleSaveImageIngredients = () => {
+    const newIngredients = ingredientsFromImage.map(name => ({ name, expiry: null }));
+    setIngredients(prev => [...prev, ...newIngredients]);
+    setShowImageChips(false);
+    setIngredientsFromImage([]);
   };
 
   const handleSearchRecipes = async (e: React.FormEvent) => {
@@ -278,6 +329,39 @@ export default function IngredientsPage() {
                 animate="visible"
               >
                 <form onSubmit={handleSearchRecipes} className="space-y-4 md:space-y-6">
+                  {/* 🔹 NUEVO: Sección de subida de imagen */}
+                  <div className="pt-2">
+                    <ImageUploadInput onImageProcessed={handleOCRText} />
+                  </div>
+
+                  {/* 🔹 NUEVO: Chips editables post-OCR */}
+                  {showImageChips && (
+                    <div className="pt-2 bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2">
+                        Ingredientes detectados (edita si es necesario):
+                      </h4>
+                      <EditableChips
+                        items={ingredientsFromImage}
+                        onChange={setIngredientsFromImage}
+                      />
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={handleSaveImageIngredients}
+                          className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded font-medium"
+                        >
+                          Usar ingredientes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowImageChips(false)}
+                          className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm rounded font-medium"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {ingredients.map((ingredient, index) => {
                       const daysUntil = getDaysUntilExpiry(ingredient.expiry ?? null);
