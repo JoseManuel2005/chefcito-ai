@@ -17,6 +17,8 @@ import {
   Pause,
   Heart,
   Share2,
+  ImageIcon,
+  Eye,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useTTS } from '@/hooks/useTTS';
@@ -61,6 +63,11 @@ export default function IngredientsPage() {
   const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
   const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
+
+  // Estados para manejar imágenes generadas del plato
+  const [dishImages, setDishImages] = useState<Record<number, string>>({});
+  const [showDishImage, setShowDishImage] = useState<Record<number, boolean>>({});
+  const [loadingDishImage, setLoadingDishImage] = useState<Record<number, boolean>>({});
 
   // Hooks personalizados
   const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
@@ -247,8 +254,13 @@ export default function IngredientsPage() {
 
       if (!response.ok) throw new Error("Error en la respuesta");
 
-      const data = await response.json();
-      setRecipes(data.recipes || []);
+      type Recipe = { nombre?: string; ingredientes?: string[]; pasos?: string[]; tiempo?: string; [key: string]: any };
+      const data = await response.json() as { recipes?: Recipe[]; warning?: string };
+      const recipesWithId = (data.recipes || []).map((recipe: Recipe) => ({
+        ...recipe,
+        id: `${recipe.nombre || 'receta'}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+      }));
+      setRecipes(recipesWithId);
       if (data.warning) setWarningMessage(data.warning);
     } catch (error) {
       console.error("Error:", error);
@@ -267,6 +279,9 @@ export default function IngredientsPage() {
     setIsVoiceFieldActive(false);
     tts.stop();
     setCurrentTTSIndex(null);
+    setDishImages({});
+    setShowDishImage({});
+    setLoadingDishImage({});
   };
 
   const scrollToRecipes = () => {
@@ -687,6 +702,54 @@ export default function IngredientsPage() {
                                         <Volume2 className="w-5 h-5" />
                                       )}
                                     </motion.button>
+                                    
+                                    {/* Botón para generar/ver imagen del plato */}
+                                    <motion.button
+                                      type="button"
+                                      onClick={async () => {
+                                        if (currentTTSIndex !== null) tts.stop();
+                                      
+                                        if (dishImages[recipeItem.id]) {
+                                          setShowDishImage(prev => ({ ...prev, [recipeItem.id]: !prev[recipeItem.id] }));
+                                          return;
+                                        }
+                                      
+                                        setLoadingDishImage(prev => ({ ...prev, [recipeItem.id]: true }));
+                                        try {
+                                          const res = await fetch('/api/generate-dish-image', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              recipeName: recipeItem.nombre || '',
+                                              ingredients: recipeItem.ingredientes || [],
+                                            }),
+                                          });
+                                          const data = await res.json();
+                                          if (res.ok && data.imageBase64) {
+                                            setDishImages(prev => ({ ...prev, [recipeItem.id]: data.imageBase64 }));
+                                            setShowDishImage(prev => ({ ...prev, [recipeItem.id]: true }));
+                                          } else {
+                                            showError('No se pudo generar la imagen del plato.');
+                                          }
+                                        } catch (err) {
+                                          showError('Error al generar la imagen.');
+                                        } finally {
+                                          setLoadingDishImage(prev => ({ ...prev, [recipeItem.id]: false }));
+                                        }
+                                      }}
+                                      className="p-1.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer"
+                                      whileHover={{ scale: 1.1 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      aria-label={dishImages[recipeItem.id] ? "Ver/Ocultar imagen" : "Generar imagen del plato"}
+                                    >
+                                      {loadingDishImage[recipeItem.id] ? (
+                                        <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                      ) : dishImages[recipeItem.id] ? (
+                                        <Eye className="w-5 h-5" />
+                                      ) : (
+                                        <ImageIcon className="w-5 h-5" />
+                                      )}
+                                    </motion.button>
 
                                     {/* Favorito */}
                                     <motion.button
@@ -784,6 +847,23 @@ export default function IngredientsPage() {
                                 </ol>
                               </motion.div>
                             </div>
+
+                            {showDishImage[recipeItem.id] && dishImages[recipeItem.id] && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mt-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700"
+                              >
+                                <img
+                                  src={`data:image/png;base64,${dishImages[recipeItem.id]}`}
+                                  alt={`Imagen de ${recipeItem.nombre}`}
+                                  className="w-full max-h-64 object-cover"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 p-2 text-center">
+                                  Imagen generada con IA • SynthID
+                                </p>
+                              </motion.div>
+                            )}
                           </motion.div>
                         );
                       })}
