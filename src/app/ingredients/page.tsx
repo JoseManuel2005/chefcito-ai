@@ -202,7 +202,7 @@ export default function IngredientsPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
                 Cocina con lo que
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300">
-                  ya tienes en casa.
+                  ya tienes en casa
                 </span>
               </h1>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">

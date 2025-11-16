@@ -59,12 +59,12 @@ export default function EditableChips({ items, onChange }: EditableChipsProps) {
           onChange={(e) => setNewItem(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Añadir ingrediente..."
-          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-900 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none"
         />
         <button
           type="button"
           onClick={handleAdd}
-          className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium"
+          className="px-3 py-1.5 text-gray-800 dark:text-white bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm font-medium cursor-pointer"
         >
           Añadir
         </button>

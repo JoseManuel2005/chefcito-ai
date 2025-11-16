@@ -104,14 +104,14 @@ export default function HomePage() {
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-4">
                   Cocina mejor,
                   <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300">
-                    con lo que ya tienes.
+                    con lo que ya tienes
                   </span>
                 </h1>
 
                 <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base max-w-xl mb-6">
                   Chefcito AI transforma los ingredientes de tu nevera en recetas
                   reales, y desarma cualquier receta para mostrarte exactamente qué
-                  necesitas. Menos duda, más sabor.
+                  necesitas. Menos duda, más sabor
                 </p>
 
                 {/* Botones principales (armonizados con login) */}

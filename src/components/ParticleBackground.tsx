@@ -46,6 +46,8 @@ export default function ParticleBackground({
     themeRef.current = theme;
   }, [theme]);
 
+  const depsKey = JSON.stringify(dependencies);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const main = document.querySelector("main");
@@ -121,7 +123,7 @@ export default function ParticleBackground({
       cancelAnimationFrame(animationId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [particleCount, ...dependencies]);
+  }, [particleCount, depsKey]);
 
   return (
     <canvas
