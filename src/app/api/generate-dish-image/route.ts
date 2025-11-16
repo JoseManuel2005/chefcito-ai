@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Docs usan `response.parts`, pero según versión puede venir como `candidates[0].content.parts`.
     // Cubrimos ambas formas.
     const parts: any[] =
-      // @ts-ignore – el SDK expone `parts` directamente en algunos modos
+      // @ts-expect-error – el SDK expone `parts` directamente en algunos modos
       response.parts ??
       response.candidates?.[0]?.content?.parts ??
       [];
