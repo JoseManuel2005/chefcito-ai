@@ -1,69 +1,65 @@
 // app/ingredients/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder';
-import {
-  Utensils,
-  Plus,
-  Trash2,
-  ChefHat,
-  Search,
-  Clock,
-  AlertTriangle,
-  Volume2,
-  Pause,
-  Heart,
-  Share2,
-} from "lucide-react";
+import { Utensils, ChefHat, AlertTriangle, Sparkles } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useTTS } from '@/hooks/useTTS';
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
 import { useTempMessage } from "@/hooks/useTempMessage";
 import { useMenuToggle } from "@/hooks/useMenuToggle";
+import { useIngredients } from "@/hooks/useIngredients";
+import { useRecipeSearch } from "@/hooks/useRecipeSearch";
+import { useImageProcessing } from "@/hooks/useImageProcessing";
+import { useTheme } from "@/contexts/ThemeContext";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import TempMessageToast from "@/components/TempMessageToast";
-import ShareMenu from "@/components/ShareMenu";
-import {
-  formatRecipeForText,
-  copyToClipboard,
-  shareSmart,
-  shareRecipeAsImage,
-} from "@/utils/shareUtils";
+import ParticleBackground from "@/components/ParticleBackground";
+import IngredientForm from "@/components/ingredients/IngredientForm";
+import RecipeList from "@/components/ingredients/RecipeList";
 import {
   containerVariants,
-  itemVariants,
   mobileRecipeVariants,
   desktopRecipeVariants,
 } from "@/utils/animations";
 
 /**
  * Página principal para "Ingredientes → Recetas"
+ * 
+ * Esta página permite a los usuarios:
+ * 1. Ingresar ingredientes manualmente, por voz o por imagen (OCR)
+ * 2. Buscar recetas personalizadas basadas en esos ingredientes
+ * 3. Ver, escuchar, compartir y guardar recetas como favoritos
+ * 4. Generar visualizaciones de los platos
+ * 
+ * Arquitectura:
+ * - Hooks personalizados manejan la lógica de negocio
+ * - Componentes presentacionales manejan la UI
+ * - Esta página solo orquesta y conecta las piezas
+ * 
+ * @page
  */
 export default function IngredientsPage() {
-  const router = useRouter();
   const { userPhoto, userPreferences, isLoading } = useUserData();
+  const { theme } = useTheme();
+  const mainRef = useRef<HTMLElement | null>(null);
 
-  const [ingredients, setIngredients] = useState<{ name: string; expiry?: string | null }[]>([{ name: "" }]);
-  const [recipes, setRecipes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  // Hooks personalizados para lógica de negocio
+  const ingredients = useIngredients();           // Gestión de ingredientes
+  const recipeSearch = useRecipeSearch();         // Búsqueda de recetas
+  const imageProcessing = useImageProcessing();   // OCR y generación de imágenes
+  const tts = useTTS();                           // Text-to-speech
+  const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
+  const { openMenuIndex, setOpenMenuIndex } = useMenuToggle("menu");
+  const { toggleFavorite: toggleFavoriteDb, isFavorite } = useFavoriteRecipes();
+
+  // Estados locales (UI específica de esta página)
   const [isMobile, setIsMobile] = useState(false);
   const [voiceTranscription, setVoiceTranscription] = useState<string>("");
   const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
-  const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
-
-  // Hooks personalizados
-  const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
-  const { openMenuIndex, setOpenMenuIndex } = useMenuToggle("menu");
-
-  // Favoritos persistidos en Firestore
-  const { toggleFavorite: toggleFavoriteDb, isFavorite } = useFavoriteRecipes();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1150);
@@ -72,141 +68,60 @@ export default function IngredientsPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleAddIngredient = () => {
-    setWarningMessage(null);
-    setRecipes([]);
-    setHasSearched(false);
-    setIngredients([...ingredients, { name: "", expiry: null }]);
+  /**
+   * Procesa el texto extraído de una imagen por OCR
+   * Envía a OpenAI para limpiar y estructurar ingredientes
+   */
+  const handleOCRText = async (rawText: string) => {
+    await imageProcessing.processOCRText(rawText, userPreferences, showError);
   };
 
-  const handleChangeIngredientName = (value: string, index: number) => {
-    setWarningMessage(null);
-    setRecipes([]);
-    setHasSearched(false);
-    const updated = [...ingredients];
-    updated[index] = { ...updated[index], name: value };
-    setIngredients(updated);
+  /**
+   * Guarda los ingredientes detectados por imagen en la lista principal
+   * Cierra el panel de chips editables
+   */
+  const handleSaveImageIngredients = () => {
+    ingredients.addIngredientsFromList(imageProcessing.ingredientsFromImage);
+    imageProcessing.cancelImageIngredients();
   };
 
-  const handleChangeIngredientExpiry = (value: string, index: number) => {
-    setWarningMessage(null);
-    setRecipes([]);
-    setHasSearched(false);
-    const updated = [...ingredients];
-    updated[index] = { ...updated[index], expiry: value || null };
-    setIngredients(updated);
-  };
-
-  const handleRemoveIngredient = (index: number) => {
-    setWarningMessage(null);
-    setRecipes([]);
-    setHasSearched(false);
-    if (ingredients.length > 1) {
-      setIngredients(ingredients.filter((_, i) => i !== index));
-    }
-  };
-
-  const getDaysUntilExpiry = (expiryDate: string | null): number | null => {
-    if (!expiryDate) return null;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
+  /**
+   * Busca recetas combinando ingredientes manuales y de voz
+   * Detiene audio TTS antes de buscar
+   */
   const handleSearchRecipes = async (e: React.FormEvent) => {
+    e.preventDefault();
     tts.stop();
     setCurrentTTSIndex(null);
 
-    e.preventDefault();
-
-    const manualIngredients = ingredients
-      .filter(ing => ing.name.trim() !== "")
-      .map(ing => ({ name: ing.name.trim(), expiry: ing.expiry ?? null }));
-
-    let voiceIngredients: { name: string; expiry: null }[] = [];
-    if (voiceTranscription.trim() !== "") {
-      voiceIngredients = voiceTranscription
-        .split(',')
-        .map(ing => ing.trim())
-        .filter(ing => ing !== "")
-        .map(name => ({ name, expiry: null }));
-    }
-
-    const allIngredientNames = new Set<string>();
-    const combinedIngredients: { name: string; expiry: string | null }[] = [];
-
-    for (const ing of manualIngredients) {
-      const key = ing.name.toLowerCase();
-      if (!allIngredientNames.has(key)) {
-        allIngredientNames.add(key);
-        combinedIngredients.push(ing);
-      }
-    }
-    for (const ing of voiceIngredients) {
-      const key = ing.name.toLowerCase();
-      if (!allIngredientNames.has(key)) {
-        allIngredientNames.add(key);
-        combinedIngredients.push(ing);
-      }
-    }
-
-    if (combinedIngredients.length === 0) return;
-
-    setLoading(true);
-    setRecipes([]);
-    setWarningMessage(null);
-    setHasSearched(true);
-
-    try {
-      const payload = {
-        ingredients: combinedIngredients,
-        userPreferences: userPreferences || {
-          allergies: [],
-          preferredCuisines: [],
-          country: "",
-        },
-      };
-
-      const response = await fetch("/api/recipe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.status === 429) {
-        const errorData = await response.json();
-        showError(errorData.error || "Demasiadas solicitudes. Por favor, espera 1 minuto.", 5000);
-        return;
-      }
-
-      if (!response.ok) throw new Error("Error en la respuesta");
-
-      const data = await response.json();
-      setRecipes(data.recipes || []);
-      if (data.warning) setWarningMessage(data.warning);
-    } catch (error) {
-      console.error("Error:", error);
-      showError("Hubo un error al generar las recetas. Por favor, intenta de nuevo.", 5000);
-    } finally {
-      setLoading(false);
-    }
+    await recipeSearch.searchRecipes(
+      ingredients.ingredients,
+      voiceTranscription,
+      userPreferences,
+      showError
+    );
   };
 
+  /**
+   * Resetea completamente el formulario y todos los estados
+   * Útil para empezar una nueva búsqueda desde cero
+   */
   const resetForm = () => {
-    setIngredients([{ name: "" }]);
-    setRecipes([]);
-    setWarningMessage(null);
-    setHasSearched(false);
+    ingredients.resetIngredients();
+    recipeSearch.resetSearch();
     setVoiceTranscription("");
     setIsVoiceFieldActive(false);
     tts.stop();
     setCurrentTTSIndex(null);
+    imageProcessing.resetImages();
   };
 
+  /**
+   * En móvil, hace scroll automático a las recetas después de buscar
+   * Mejora la UX mostrando los resultados inmediatamente
+   */
   const scrollToRecipes = () => {
-    if (isMobile && recipes.length > 0) {
+    if (isMobile && recipeSearch.recipes.length > 0) {
       setTimeout(() => {
         document.getElementById("recipes-section")?.scrollIntoView({ behavior: "smooth" });
       }, 500);
@@ -214,21 +129,36 @@ export default function IngredientsPage() {
   };
 
   useEffect(() => {
-    if (isMobile && recipes.length > 0 && !loading) {
+    if (isMobile && recipeSearch.recipes.length > 0 && !recipeSearch.loading) {
       scrollToRecipes();
     }
-  }, [recipes, loading, isMobile]);
+  }, [recipeSearch.recipes, recipeSearch.loading, isMobile]);
 
   if (isLoading) {
     return (
-      <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
-        <Navbar userPhoto={userPhoto} />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FFCB2B] rounded-full mb-5 animate-pulse">
-              <ChefHat className="w-8 h-8 text-white" />
+      <main
+        ref={mainRef}
+        className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${
+          theme === "dark" ? "dark bg-gray-950" : "bg-white"
+        }`}
+      >
+        {/* Canvas de partículas */}
+        <ParticleBackground theme={theme} />
+
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <Navbar userPhoto={userPhoto} />
+          <div className="flex-grow flex items-center justify-center px-4">
+            <div className="text-center">
+              <div className="relative inline-flex items-center justify-center w-20 h-20 mb-5">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 blur-md opacity-70 animate-pulse" />
+                <div className="relative flex items-center justify-center w-16 h-16 bg-gray-900 dark:bg-slate-900 rounded-full shadow-lg">
+                  <ChefHat className="w-8 h-8 text-amber-300" />
+                </div>
+              </div>
+              <p className="text-gray-700 dark:text-gray-300 text-sm">
+                Preparando tu cocina inteligente...
+              </p>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
           </div>
         </div>
       </main>
@@ -236,487 +166,186 @@ export default function IngredientsPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 background-grid">
-      <Navbar userPhoto={userPhoto} />
-      <div className="flex-grow p-4 md:p-6">
-        <div className={`${hasSearched && !isMobile ? "max-w-380" : "max-w-4xl"} mx-auto transition-all duration-300 pt-0 md:pt-2`}>
-          <motion.div
-            className="flex items-center justify-between mb-6 md:mb-8"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <Utensils className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              </motion.div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Ingredientes → Recetas</h1>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Genera recetas con tus ingredientes disponibles</p>
-              </div>
-            </div>
-          </motion.div>
+    <main
+      ref={mainRef}
+      className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${
+        theme === "dark" ? "dark bg-gray-950" : "bg-white"
+      }`}
+    >
+      {/* Canvas de partículas */}
+      <ParticleBackground theme={theme} dependencies={[recipeSearch.recipes.length, recipeSearch.hasSearched]} />
 
-          <div
-            className={`${isMobile ? "flex flex-col space-y-6" : hasSearched ? "flex flex-row gap-20 items-start" : "flex flex-col items-center"}`}
-          >
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navbar userPhoto={userPhoto} />
+
+        <div className="flex-grow px-4 sm:px-6 lg:px-8 py-8 lg:py-3">
+          <div className="max-w-6xl mx-auto">
+            
+            {/* Header con badge - más compacto */}
             <motion.div
-              layout
-              className={`${isMobile ? "w-full" : hasSearched ? "w-1/2 sticky top-6" : "w-full"}`}
-              initial={false}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="mb-8 md:mb-15 text-center"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
             >
+              {/* Badge superior */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-3 py-1 text-[11px] font-medium text-gray-900 shadow-md backdrop-blur dark:border-gray-800/80 dark:bg-gray-900/80 dark:text-gray-100 mb-4">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-yellow-500 dark:bg-gray-800">
+                  <Utensils className="h-3 w-3" />
+                </div>
+                <span className="flex items-center gap-1">
+                  Ingredientes → Recetas
+                </span>
+              </div>
+
+              {/* Título principal */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-3">
+                Cocina con lo que
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300">
+                  ya tienes en casa.
+                </span>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Ingresa tus ingredientes manualmente, por voz o desde una imagen, y descubre recetas personalizadas al instante.
+              </p>
+            </motion.div>
+
+            {/* Grid de formulario y recetas */}
+            <div
+              className={`${
+                recipeSearch.hasSearched 
+                  ? isMobile 
+                    ? "flex flex-col space-y-8" 
+                    : "grid grid-cols-2 gap-10 items-start"
+                  : "flex justify-center"
+              }`}
+            >
+              {/* Columna izquierda: Formulario */}
               <motion.div
                 layout
-                className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
+                className={`${
+                  recipeSearch.hasSearched 
+                    ? isMobile ? "w-full" : "sticky top-6"
+                    : "w-full max-w-3xl"
+                }`}
+                initial={false}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
-                <form onSubmit={handleSearchRecipes} className="space-y-4 md:space-y-6">
-                  <div className="space-y-3">
-                    {ingredients.map((ingredient, index) => {
-                      const daysUntil = getDaysUntilExpiry(ingredient.expiry ?? null);
-                      const isExpiringSoon = daysUntil !== null && daysUntil <= 2;
-                      const isExpired = daysUntil !== null && daysUntil < 0;
+                {/* Card del formulario con glass morphism */}
+                <div className="relative">
+                  {/* Glow detrás */}
+                  <div className="pointer-events-none absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-yellow-400/25 via-amber-200/10 to-transparent blur-3xl opacity-80 dark:from-yellow-500/25 dark:via-amber-300/10 dark:to-transparent" />
+                  
+                  <motion.div
+                    layout
+                    className="relative rounded-[2.5rem] border border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-gray-800/80 dark:bg-gray-900/95 dark:shadow-[0_24px_80px_rgba(0,0,0,0.6)] p-6 md:p-8 transition-all duration-300"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <IngredientForm
+                      ingredients={ingredients.ingredients}
+                      onAddIngredient={() => {
+                        recipeSearch.resetSearch();
+                        ingredients.addIngredient();
+                      }}
+                      onChangeIngredientName={(value, index) => {
+                        recipeSearch.resetSearch();
+                        ingredients.updateIngredientName(value, index);
+                      }}
+                      onChangeIngredientExpiry={(value, index) => {
+                        recipeSearch.resetSearch();
+                        ingredients.updateIngredientExpiry(value, index);
+                      }}
+                      onRemoveIngredient={(index) => {
+                        recipeSearch.resetSearch();
+                        ingredients.removeIngredient(index);
+                      }}
+                      getDaysUntilExpiry={ingredients.getDaysUntilExpiry}
+                      onSubmit={handleSearchRecipes}
+                      onReset={resetForm}
+                      loading={recipeSearch.loading}
+                      isLoading={isLoading}
+                      voiceTranscription={voiceTranscription}
+                      setVoiceTranscription={setVoiceTranscription}
+                      isVoiceFieldActive={isVoiceFieldActive}
+                      setIsVoiceFieldActive={setIsVoiceFieldActive}
+                      showImageChips={imageProcessing.showImageChips}
+                      ingredientsFromImage={imageProcessing.ingredientsFromImage}
+                      setIngredientsFromImage={imageProcessing.setIngredientsFromImage}
+                      onSaveImageIngredients={handleSaveImageIngredients}
+                      onCancelImageIngredients={imageProcessing.cancelImageIngredients}
+                      onImageProcessed={handleOCRText}
+                    />
+                  </motion.div>
+                </div>
 
-                      return (
-                        <motion.div key={index} className="flex flex-col gap-3" variants={itemVariants} layout>
-                          <div className="flex flex-col sm:flex-row gap-3 items-start">
-                            <input
-                              type="text"
-                              value={ingredient.name}
-                              onChange={(e) => handleChangeIngredientName(e.target.value, index)}
-                              className="flex-1 w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
-                              placeholder="Ej: tomate, cebolla, pollo..."
-                            />
-
-                            <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
-                              <div className="relative w-full sm:w-auto min-w-[180px]">
-                                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                                <input
-                                  type="date"
-                                  value={ingredient.expiry || ""}
-                                  onChange={(e) => handleChangeIngredientExpiry(e.target.value, index)}
-                                  className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base cursor-pointer"
-                                  aria-label="Fecha de vencimiento (opcional)"
-                                />
-                              </div>
-
-                              <div className="flex items-center gap-2 self-center sm:self-start">
-                                <AnimatePresence>
-                                  {isExpiringSoon && (
-                                    <motion.span
-                                      initial={{ opacity: 0, scale: 0.8 }}
-                                      animate={{ opacity: 1, scale: 1 }}
-                                      exit={{ opacity: 0, scale: 0.8 }}
-                                      className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${isExpired
-                                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                                          : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
-                                        }`}
-                                    >
-                                      {isExpired ? "Vencido" : `Vence en ${daysUntil} días`}
-                                    </motion.span>
-                                  )}
-                                </AnimatePresence>
-
-                                {ingredients.length > 1 && (
-                                  <motion.button
-                                    type="button"
-                                    onClick={() => handleRemoveIngredient(index)}
-                                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Trash2 className="w-5 h-5" />
-                                  </motion.button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-
-                    <motion.button
-                      type="button"
-                      onClick={handleAddIngredient}
-                      className="w-full py-3 border-2 cursor-pointer border-dashed border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg hover:border-yellow-300 dark:hover:border-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                {/* Warning message */}
+                <AnimatePresence>
+                  {recipeSearch.warningMessage && (
+                    <motion.div
+                      className="mt-4 md:mt-6"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <Plus className="w-4 h-4" />
-                      Agregar ingrediente
-                    </motion.button>
-                  </div>
-
-                  {isVoiceFieldActive ? (
-                    <div className="pt-2">
-                      <div className="flex items-start gap-2">
-                        <input
-                          type="text"
-                          value={voiceTranscription}
-                          onChange={(e) => setVoiceTranscription(e.target.value)}
-                          placeholder="Edita la transcripción si es necesario..."
-                          className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-black dark:text-white dark:bg-gray-700 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm md:text-base placeholder-gray-500 dark:placeholder-gray-400"
-                          aria-label="Transcripción de voz (editable)"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVoiceTranscription("");
-                            setIsVoiceFieldActive(false);
-                          }}
-                          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                          aria-label="Cerrar campo de voz"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                      <div className="relative rounded-2xl border border-red-200/70 bg-red-50/80 p-4 backdrop-blur-xl dark:border-red-800/80 dark:bg-red-900/20 flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                          {recipeSearch.warningMessage}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Este campo solo aparece tras usar el micrófono. Edita si la transcripción no es precisa.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="pt-2 flex items-center gap-2">
-                      <div className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-500 rounded-lg text-sm cursor-not-allowed">
-                        Habla tus ingredientes usando el micrófono
-                      </div>
-                      <VoiceRecorder
-                        onTranscriptionReady={(text) => {
-                          const cleanText = text.trim();
-                          setVoiceTranscription(cleanText);
-                          if (cleanText !== "") setIsVoiceFieldActive(true);
-                        }}
-                      />
-                    </div>
+                    </motion.div>
                   )}
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <motion.button
-                      type="submit"
-                      disabled={
-                        loading ||
-                        (ingredients.every((ing) => ing.name.trim() === "") && voiceTranscription.trim() === "") ||
-                        isLoading
-                      }
-                      className="flex-1 dark:text-gray-800 cursor-pointer bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-                      whileHover={{
-                        scale:
-                          loading || ingredients.every((ing) => ing.name.trim() === "") || isLoading
-                            ? 1
-                            : 1.02,
-                        boxShadow:
-                          loading || ingredients.every((ing) => ing.name.trim() === "") || isLoading
-                            ? "none"
-                            : "0 4px 12px rgba(251, 191, 36, 0.3)",
-                      }}
-                      whileTap={{
-                        scale:
-                          loading || ingredients.every((ing) => ing.name.trim() === "") || isLoading
-                            ? 1
-                            : 0.98,
-                      }}
-                    >
-                      {loading ? (
-                        <>
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                          />
-                          Generando recetas...
-                        </>
-                      ) : (
-                        <>
-                          <Search className="w-4 h-4" />
-                          Buscar recetas
-                        </>
-                      )}
-                    </motion.button>
-
-                    <motion.button
-                      type="button"
-                      onClick={resetForm}
-                      className="px-6 py-3 border cursor-pointer border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm md:text-base"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Limpiar
-                    </motion.button>
-                  </div>
-                </form>
+                </AnimatePresence>
               </motion.div>
 
-              <AnimatePresence>
-                {warningMessage && (
+              {/* Columna derecha: Recetas */}
+              <AnimatePresence mode="popLayout">
+                {(recipeSearch.hasSearched || recipeSearch.recipes.length > 0) && (
                   <motion.div
-                    className="mt-4 md:mt-6"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
+                    key="recipes-section"
+                    id="recipes-section"
+                    className={`${isMobile ? "w-full" : ""}`}
+                    variants={isMobile ? mobileRecipeVariants : desktopRecipeVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                   >
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                        {warningMessage}
-                      </p>
-                    </div>
+                    <RecipeList
+                      recipes={recipeSearch.recipes}
+                      loading={recipeSearch.loading}
+                      isMobile={isMobile}
+                      currentTTSIndex={currentTTSIndex}
+                      setCurrentTTSIndex={setCurrentTTSIndex}
+                      ttsStatus={tts.status}
+                      ttsSpeak={tts.speak}
+                      ttsPause={tts.pause}
+                      ttsResume={tts.resume}
+                      ttsStop={tts.stop}
+                      isFavorite={isFavorite}
+                      toggleFavorite={toggleFavoriteDb}
+                      showSuccess={showSuccess}
+                      showError={showError}
+                      openMenuIndex={openMenuIndex}
+                      setOpenMenuIndex={setOpenMenuIndex}
+                      dishImages={imageProcessing.dishImages}
+                      showDishImage={imageProcessing.showDishImage}
+                      loadingDishImage={imageProcessing.loadingDishImage}
+                      generateDishImage={imageProcessing.generateDishImage}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
-
-            <AnimatePresence mode="popLayout">
-              {(hasSearched || recipes.length > 0) && (
-                <motion.div
-                  key="recipes-section"
-                  id="recipes-section"
-                  className={`${isMobile ? "w-full" : "w-1/2 -mt-17"}`}
-                  variants={isMobile ? mobileRecipeVariants : desktopRecipeVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  {recipes.length > 0 ? (
-                    <motion.div className="space-y-4 md:space-y-6">
-                      <motion.h3
-                        className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white text-center mb-4 md:mb-10"
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        Recetas sugeridas
-                      </motion.h3>
-
-                      {recipes.map((recipeItem, index) => {
-                        const ttsText = `
-                          Receta: ${recipeItem.nombre || 'Sin nombre'}.
-                          Ingredientes: ${recipeItem.ingredientes?.join(', ') || 'No especificados'}.
-                          Preparación: ${recipeItem.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
-                        `.replace(/\s+/g, ' ').trim();
-                        const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
-                        const isFav = isFavorite(nombreReceta);
-
-                        return (
-                          <motion.div
-                            key={index}
-                            className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 hover:shadow-md dark:hover:shadow-gray-900/50 transition-all duration-300"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + index * 0.1 }}
-                            whileHover={{ y: isMobile ? 0 : -2 }}
-                          >
-                            <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
-                              <motion.div
-                                className="w-10 h-10 md:w-12 md:h-12 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center shrink-0"
-                                whileHover={{ rotate: 5 }}
-                              >
-                                <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
-                              </motion.div>
-
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <h4 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 md:mb-2">
-                                    {nombreReceta}
-                                  </h4>
-
-                                  {/* Botonera: Audio / Menú / Favorito */}
-                                  <div className="flex items-center gap-1">
-                                    {/* MENÚ COMPACTO (Share/Copy/Image) */}
-                                    <div className="relative" id={`menu-${index}`}>
-                                      <motion.button
-                                        type="button"
-                                        onClick={() => setOpenMenuIndex((v: number | null) => v === index ? null : index)}
-                                        className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        aria-label="Más opciones"
-                                        title="Compartir / Copiar"
-                                      >
-                                        <Share2 className="w-5 h-5" />
-                                      </motion.button>
-
-                                      {openMenuIndex === index && (
-                                        <ShareMenu
-                                          onShareText={async () => {
-                                            setOpenMenuIndex(null);
-                                            const shareText = formatRecipeForText(recipeItem, index);
-                                            const ok = await shareSmart(shareText, nombreReceta);
-                                            if (ok) showSuccess("Hoja de compartir abierta", 1800);
-                                          }}
-                                          onCopyText={async () => {
-                                            setOpenMenuIndex(null);
-                                            const shareText = formatRecipeForText(recipeItem, index);
-                                            const ok = await copyToClipboard(shareText);
-                                            ok ? showSuccess("Receta copiada", 1800) : showError("No se pudo copiar", 1800);
-                                          }}
-                                          onShareImage={async () => {
-                                            setOpenMenuIndex(null);
-                                            await shareRecipeAsImage(recipeItem, index, showSuccess, showError);
-                                          }}
-                                        />
-                                      )}
-                                    </div>
-
-                                    {/* Audio TTS */}
-                                    <motion.button
-                                      type="button"
-                                      onClick={() => {
-                                        if (currentTTSIndex === index) {
-                                          if (tts.status === "playing") tts.pause();
-                                          else if (tts.status === "paused") tts.resume();
-                                        } else {
-                                          tts.stop();
-                                          setCurrentTTSIndex(index);
-                                          tts.speak(ttsText);
-                                        }
-                                      }}
-                                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      aria-label={currentTTSIndex === index && tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
-                                    >
-                                      {currentTTSIndex === index && tts.status === "loading" ? (
-                                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                      ) : currentTTSIndex === index && tts.status === "playing" ? (
-                                        <Pause className="w-5 h-5" />
-                                      ) : (
-                                        <Volume2 className="w-5 h-5" />
-                                      )}
-                                    </motion.button>
-
-                                    {/* Favorito */}
-                                    <motion.button
-                                      type="button"
-                                      onClick={async () => {
-                                        const data = {
-                                          nombre: nombreReceta,
-                                          ingredientes: (recipeItem.ingredientes || []) as string[],
-                                          pasos: (recipeItem.pasos || []) as string[],
-                                          tiempo: (recipeItem.tiempo || "") as string,
-                                        };
-                                        const wasFav = isFav;
-                                        const ok = await toggleFavoriteDb(data);
-                                        if (!ok) {
-                                          showError("Inicia sesión para guardar favoritos", 4000);
-                                          return;
-                                        }
-                                        showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
-                                      }}
-                                      className={`p-1.5 rounded-full transition-colors cursor-pointer group ${isFav ? "hover:bg-yellow-50 dark:hover:bg-yellow-900/20" : "hover:bg-yellow-50 dark:hover:bg-yellow-900/20"}`}
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      aria-label={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
-                                    >
-                                      <Heart
-                                        className={`w-5 h-5 transition-colors ${
-                                          isFav
-                                            ? "text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400"
-                                            : "text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400"
-                                        }`}
-                                      />
-                                    </motion.button>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3 md:w-4 md:h-4" />
-                                    {recipeItem.tiempo || "Tiempo no estimado"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-3 gap-4 md:gap-0 mr-20">
-                              <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.4 + index * 0.1 }}
-                                className="col-span-1"
-                              >
-                                <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
-                                  Ingredientes:
-                                </h5>
-                                <ul className="space-y-1 md:space-y-2">
-                                  {(recipeItem.ingredientes || []).map((ing: string, i: number) => (
-                                    <motion.li
-                                      key={i}
-                                      className="flex items-center gap-3 text-gray-700 dark:text-gray-300 text-sm md:text-base"
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      transition={{ delay: 0.5 + index * 0.1 + i * 0.05 }}
-                                    >
-                                      <div className="w-1.5 h-1.5 bg-yellow-400 dark:bg-yellow-500 rounded-full shrink-0" />
-                                      {ing}
-                                    </motion.li>
-                                  ))}
-                                </ul>
-                              </motion.div>
-
-                              <motion.div
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 + index * 0.1 }}
-                                className="col-span-2 md:ml-5"
-                              >
-                                <h5 className="font-semibold text-gray-900 dark:text-white mb-2 md:mb-3 text-sm md:text-base">
-                                  Preparación:
-                                </h5>
-                                <ol className="space-y-1 md:space-y-2">
-                                  {(recipeItem.pasos || []).map((paso: string, i: number) => (
-                                    <motion.li
-                                      key={i}
-                                      className="flex gap-2 md:gap-4 text-gray-700 dark:text-gray-300 text-sm md:text-base"
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ delay: 0.6 + index * 0.1 + i * 0.05 }}
-                                    >
-                                      <span className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-xs md:text-sm font-medium rounded-full shrink-0 mt-0.5">
-                                        {i + 1}
-                                      </span>
-                                      <span className="">{paso}</span>
-                                    </motion.li>
-                                  ))}
-                                </ol>
-                              </motion.div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </motion.div>
-                  ) : loading ? (
-                    <motion.div className="flex items-center justify-center py-8 md:py-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <div className="text-center">
-                        <motion.div
-                          className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-[#FFCB2B] rounded-full mb-3 md:mb-4"
-                          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-                          transition={{ rotate: { duration: 2, repeat: Infinity, ease: "linear" }, scale: { duration: 1, repeat: Infinity } }}
-                        >
-                          <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        </motion.div>
-                        <motion.p className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                          Generando recetas...
-                        </motion.p>
-                      </div>
-                    </motion.div>
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            </div>
           </div>
         </div>
+
+        <Footer />
       </div>
 
       <TempMessageToast message={tempMessage} type={tempMessageType} />
-
-      <Footer />
     </main>
   );
 }
