@@ -262,37 +262,40 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
       if (!userContext) {
         userContext = "No hay preferencias específicas del usuario. ";
       }
-    
-      const prompt = `Eres un experto en cocina y nutrición.
+
+      const prompt = `Eres un chef experto con conocimiento profundo de **cocina global**, especialmente de **platos tradicionales y cotidianos de LATINOAMÉRICA (Colombia, México, Argentina, Perú, Chile, etc.)**.
+
 ${userContext}
 
-ANTES DE ANALIZAR:
-1. Verifica que la receta "${recipe}" sea un plato comestible real y seguro para consumo humano.
-2. Si la receta es absurda, no comestible o peligrosa (ej: "sopa de piedras", "ensalada de lapiz", "pastel de plastico"), responde con:
-{
-  "receta": "${recipe}",
-  "ingredientes": [],
-  "pasos": [],
-  "tiempo": "0 minutos",
-  "comentario": "⚠️ La receta '${recipe}' no es un plato comestible real. Por favor, ingresa el nombre de una receta válida (ej: Paella, Tacos, Risotto)."
-}
+**Definición clave**: Una "receta válida" incluye **cualquier plato comestible real**, ya sea:
+- Platos complejos: "bandeja paisa", "ajiaco", "ceviche"
+- Platos simples: "carne asada", "milanesa", "arroz con huevo", "ensalada cesar", "sopa de cebolla"
+- Platos internacionales: "paella", "ramen", "curry de pollo", "lasaña"
+- Platos de un solo ingrediente preparado: "huevo frito", "plátano asado", "queso fundido"
 
-3. Si la receta es válida, analiza sus ingredientes reales y seguros, y genera una secuencia clara de pasos de preparación.
+**No son recetas válidas**: cosas no comestibles, absurdas o peligrosas (ej: "agua hervida", "ensalada de piedras", "sopa de plástico").
 
-Instrucciones para recetas válidas:
-- Extrae una lista precisa de ingredientes (solo los esenciales).
-- Estima un tiempo de preparación REALISTA (en minutos).
-- Genera entre 3 y 6 pasos claros, secuenciales y accionables para preparar la receta.
-- Los pasos deben ser simples, prácticos y adaptados a un cocinero ocasional.
-- Si la receta se puede adaptar a las preferencias del usuario (alergias, región, cocina), menciónalo en el comentario.
+**ANTES DE ANALIZAR**:
+1. Si el nombre "${recipe}" coincide con un plato de la lista de ejemplos arriba (o similar), **trátalo como una receta válida, incluso si es simple**.
+2. Si es un plato regional latinoamericano (ej: "sancocho", "lechona", "tamales", "arepas rellenas", "pabellón criollo", "huasquito"), **asúmelo como auténtico y real**.
+3. Solo rechaza si es claramente no comestible.
 
-Analiza la receta llamada "${recipe}" y devuelve SOLO un JSON con este formato exacto:
+**Instrucciones para recetas válidas**:
+- **Ingredientes**: lista solo los esenciales y realistas (ej. "milanesa": carne molida o filete, huevo, pan rallado, aceite; "carne asada": carne de res, sal, limón, ajo).
+- **Tiempo**: sé realista (una "milanesa" toma 20-30 min, no 5 min).
+- **Pasos**: 3-6 pasos claros, prácticos, sin jerga técnica innecesaria.
+- **Comentario**: 
+  • Menciona si faltan ingredientes comunes (ej: "¿quieres agregar papas fritas como acompañamiento?").
+  • Sugiere sustituciones si hay alergias (${allergies.length > 0 ? 'alérgenos: ' + allergies.join(', ') : 'sin alergias'}).
+  • Si el plato tiene variantes regionales, menciónalo brevemente (ej: "En Colombia se sirve con arroz y patacones").
+
+**Formato de salida**: Devuelve **SOLO un JSON** con este formato exacto:
 {
   "receta": "Nombre de la receta",
   "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-  "pasos": ["Paso 1", "Paso 2", "Paso 3", ...],
-  "tiempo": "30-40 minutos",
-  "comentario": "Notas útiles: ¿faltan ingredientes? ¿sustituciones? ¿adaptación a preferencias?"
+  "pasos": ["Paso 1", "Paso 2", ...],
+  "tiempo": "20-30 minutos",
+  "comentario": "Notas útiles sobre autenticidad, ingredientes faltantes o adaptación a tus preferencias."
 }`;
       
       // Llamada a OpenAI para analizar la receta.
