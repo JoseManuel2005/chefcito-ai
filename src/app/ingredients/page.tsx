@@ -25,10 +25,6 @@ import {
   desktopRecipeVariants,
 } from "@/utils/animations";
 
-// 🔹 NUEVO: Importar componentes de visión
-import ImageUploadInput from '@/components/ImageUploadInput';
-import EditableChips from '@/components/EditableChips';
-
 /**
  * Página principal para "Ingredientes → Recetas"
  * 
