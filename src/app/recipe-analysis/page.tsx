@@ -1,4 +1,4 @@
-// app/recipe-analysis/page.tsx
+// src/app/recipe-analysis/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,6 +13,7 @@ import {
   Pause,
   Heart,
   Share2,
+  AlertCircle,
 } from "lucide-react";
 import { useUserData } from "@/hooks/useUserData";
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
@@ -21,6 +22,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import TempMessageToast from "@/components/TempMessageToast";
 import ShareMenu from "@/components/ShareMenu";
+import ImagePreviewInput from '@/components/ImagePreviewInput';
 import { useTTS } from '@/hooks/useTTS';
 import {
   formatRecipeForText,
@@ -48,12 +50,17 @@ export default function RecipeAnalysisPage() {
   const tts = useTTS();
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
   const [lastSearchedRecipe, setLastSearchedRecipe] = useState("");
+
+  // 🔹 NUEVO: Estados para Modo 2 (Foto de plato)
+  const [dishNameFromImage, setDishNameFromImage] = useState<string>("");
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const [showDishEdit, setShowDishEdit] = useState(false);
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [pendingDishImage, setPendingDishImage] = useState<File | null>(null);
+  // const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+
   const { toggleFavorite, isFavorite } = useFavoriteRecipes();
-
-  // Hooks personalizados
   const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
-
-  // Menú compacto (solo hay 1 card aquí)
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -74,6 +81,45 @@ export default function RecipeAnalysisPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
+  // 🔹 NUEVO: Convertir archivo a base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result?.toString().split(',')[1] || '');
+      reader.onerror = reject;
+    });
+  };
+
+  const confirmDishImage = async () => {
+    if (!pendingDishImage) return;
+    setIsIdentifying(true);
+    try {
+      const base64 = await fileToBase64(pendingDishImage);
+      const res = await fetch('/api/identify-dish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.dishName) {
+        setDishNameFromImage(data.dishName);
+        setConfidence(data.confidence ?? null);
+        setShowDishEdit(true);
+      } else {
+        showError(data.error || 'No se pudo identificar el plato.');
+      }
+    } catch (err: any) {
+      showError('Error al procesar la imagen.');
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  const cancelDishImage = () => {
+    setPendingDishImage(null);
+  };
+
   const handleAnalyzeRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanRecipe = recipe.trim();
@@ -86,7 +132,7 @@ export default function RecipeAnalysisPage() {
 
     try {
       const payload = {
-        recipe: recipe.trim(),
+        recipe: cleanRecipe,
         userPreferences: userPreferences || {
           allergies: [],
           preferredCuisines: [],
@@ -114,7 +160,7 @@ export default function RecipeAnalysisPage() {
       console.error("Error:", error);
       showError("Hubo un error al analizar la receta. Por favor, intenta de nuevo.", 5000);
       setAnalysis({
-        receta: recipe,
+        receta: cleanRecipe,
         ingredientes: [],
         comentario: "Hubo un error al analizar la receta. Por favor, intenta de nuevo.",
       });
@@ -139,6 +185,10 @@ export default function RecipeAnalysisPage() {
     setHasSearched(false);
     setVoiceTranscription("");
     setLastSearchedRecipe("");
+    setDishNameFromImage("");
+    setConfidence(null);
+    setShowDishEdit(false);
+    setPendingDishImage(null);
   };
 
   const scrollToAnalysis = () => {
@@ -239,7 +289,93 @@ export default function RecipeAnalysisPage() {
                 initial="hidden"
                 animate="visible"
               >
+                {/* 🔹 NUEVO: Sección de foto de plato CON PREVISUALIZACIÓN */}
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                    ¿Tienes una foto del plato preparado?
+                  </label>
+                  <ImagePreviewInput
+                    value={pendingDishImage}
+                    onChange={(file) => {
+                      setPendingDishImage(file);
+                    }}
+                    disabled={isIdentifying}
+                  />
+                </div>
+                        
+                {/* ✅ Confirmación antes de analizar */}
+                {pendingDishImage && !showDishEdit && (
+                  <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      ¿Estás seguro de usar esta foto para identificar el plato?
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={confirmDishImage}
+                        disabled={isIdentifying}
+                        className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded font-medium"
+                      >
+                        {isIdentifying ? 'Analizando...' : 'Sí, usar esta foto'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingDishImage(null)}
+                        className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm rounded font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 🔹 NUEVO: Bloque de edición tras identificación */}
+                {showDishEdit && (
+                  <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        ¿Es este el plato correcto? Puedes corregir el nombre antes de analizar.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={dishNameFromImage}
+                        onChange={(e) => setDishNameFromImage(e.target.value)}
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                        placeholder="Nombre del plato"
+                      />
+                      {confidence !== null && (
+                        <span className="px-3 py-2 text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg whitespace-nowrap">
+                          {Math.round(confidence * 100)}% seguro
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRecipe(dishNameFromImage);
+                          setShowDishEdit(false);
+                        }}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded font-medium"
+                      >
+                        Analizar esta receta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowDishEdit(false)}
+                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm rounded font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleAnalyzeRecipe} className="space-y-4 md:space-y-6">
+                  {/* ... resto del formulario igual ... */}
                   <motion.div variants={itemVariants}>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start gap-2">
@@ -309,6 +445,7 @@ export default function RecipeAnalysisPage() {
             </motion.div>
 
             {/* Analysis Section */}
+            {/* ... resto del análisis SIN CAMBIOS ... */}
             <AnimatePresence mode="popLayout">
               {hasSearched && (
                 <motion.div
@@ -321,7 +458,6 @@ export default function RecipeAnalysisPage() {
                   exit="exit"
                 >
                   {loading ? (
-                    // Estado de carga - MOSTRAR ESTE ESTADO
                     <motion.div 
                       className="flex items-center justify-center py-8 md:py-12" 
                       initial={{ opacity: 0 }} 
@@ -357,13 +493,13 @@ export default function RecipeAnalysisPage() {
                       </div>
                     </motion.div>
                   ) : analysis ? (
-                    // Estado con análisis completado
                     <motion.div
                       className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8 transition-colors duration-300"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
                     >
+                      {/* ... todo el análisis igual ... */}
                       <motion.div
                         className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6"
                         initial={{ opacity: 0, y: 20 }}
@@ -389,7 +525,6 @@ export default function RecipeAnalysisPage() {
 
                             {/* Botonera: Audio / Menú / Favorito */}
                             <div className="flex items-center gap-1">
-                              {/* Menú compacto de compartir */}
                               <div className="relative" id="analysis-share-menu">
                                 <motion.button
                                   type="button"
@@ -425,7 +560,6 @@ export default function RecipeAnalysisPage() {
                                 )}
                               </div>
 
-                              {/* TTS */}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -454,7 +588,6 @@ export default function RecipeAnalysisPage() {
                                 )}
                               </button>
 
-                              {/* Favorito */}
                               <button
                                 type="button"
                                 onClick={async () => {
@@ -498,11 +631,8 @@ export default function RecipeAnalysisPage() {
                         </div>
                       </motion.div>
 
-                      {/* Layout */}
                       <div className={`${isMobile ? 'space-y-6' : 'grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6'}`}>
-                        {/* Columna principal */}
                         <div className={isMobile ? '' : 'space-y-6'}>
-                          {/* Ingredientes */}
                           <motion.div initial={{ opacity: 0, y: isMobile ? 20 : 0 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                             <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">Ingredientes:</h5>
                             <div className="space-y-2">
@@ -522,7 +652,6 @@ export default function RecipeAnalysisPage() {
                             </div>
                           </motion.div>
 
-                          {/* Pasos */}
                           {analysis.pasos && analysis.pasos.length > 0 && (
                             <motion.div initial={{ opacity: 0, y: isMobile ? 20 : 0 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
                               <h5 className="font-semibold text-gray-900 mt-10 dark:text-white mb-3 md:mb-4 text-sm md:text-base">Cómo prepararla:</h5>
@@ -546,7 +675,6 @@ export default function RecipeAnalysisPage() {
                           )}
                         </div>
 
-                        {/* Columna secundaria */}
                         {analysis.comentario && (
                           <motion.div initial={{ opacity: 0, y: isMobile ? 20 : 0 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0 }} className="lg:sticky lg:top-6">
                             <h5 className="font-semibold text-gray-900 dark:text-white mb-3 md:mb-4 text-sm md:text-base">Notas adicionales:</h5>
