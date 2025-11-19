@@ -6,7 +6,7 @@ import {
   X, BookOpen, ChefHat, Search, Utensils, BookText, Lightbulb, Shield, Menu,
   Target, Zap, Eye, CheckCircle, Clock, MapPin, Moon, Heart,
   Sparkles, ClipboardList, Settings, Users, Globe, Plus, PlayCircle, Scale, AlertTriangle,
-  Volume2, Share2, Copy, Image as ImageIcon
+  Volume2, Share2, Copy, Image as ImageIcon, Camera
 } from "lucide-react";
 
 interface UserGuideProps {
@@ -186,6 +186,73 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
           </div>
         </div>
       ),
+    },
+    {
+      id: "foto",
+      title: "Análisis por Imagen" ,
+      icon: Camera,
+      content: (
+        <div className="space-y-4">
+
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Agrega ingredientes por foto
+              <Novedad />
+            </h3>
+            <p className="text-purple-700 dark:text-purple-400 text-sm">
+              Sube una foto del plato o ingredientes y la IA los identificará automáticamente para generar recetas más precisas.
+            </p>
+          </div>
+
+
+
+          
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2"><PlayCircle className="w-4 h-4" /> Cómo funciona:</h4>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">1</div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Sube una foto de tu plato o ingredientes.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">2</div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Analiza con IA</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Chefcito AI identificará los ingredientes, cantidades y pasos cuando sea posible.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">3</div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Opcional</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Añade o edita los ingredientes detectados si deseas.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">4</div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Revisa los resultados</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs mt-1"> Obtén una lista organizada de ingredientes y comentarios útiles.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 mt-4">
+            <h4 className="font-semibold text-purple-800 dark:text-purple-300 text-sm mb-2 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Ideal para:
+            </h4>
+            <p className="text-purple-700 dark:text-purple-400 text-xs">
+              Personas que prefieren mostrar una foto del plato en vez de escribir largo o dictar ingredientes.
+            </p>
+          </div>
+
+        </div>
+      )
     },
     {
       id: "compartir",
