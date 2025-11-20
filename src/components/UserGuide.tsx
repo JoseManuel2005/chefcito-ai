@@ -1,7 +1,9 @@
 "use client";
 
+import ParticleBackground from "@/components/ParticleBackground";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   X, BookOpen, ChefHat, Search, Utensils, BookText, Lightbulb, Shield, Menu,
   Target, Zap, Eye, CheckCircle, Clock, MapPin, Moon, Heart,
@@ -18,6 +20,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
   const [activeSection, setActiveSection] = useState("inicio");
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const { theme } = useTheme();
 
   // Detectar si es móvil
   useEffect(() => {
@@ -31,10 +34,12 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
   }, []);
 
   const Novedad = ({ children }: { children?: React.ReactNode }) => (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 ml-2">
-      <Sparkles className="w-3 h-3" /> {children || "Nuevo en este MVP"}
+    <span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-800/50 dark:text-emerald-400 ml-2">
+      <Sparkles className="w-4 h-4" /> {children || "Nuevo en este MVP"}
     </span>
   );
+    if (!isOpen) return null;
+  
 
   const sections = [
     {
@@ -43,12 +48,12 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: ChefHat,
       content: (
         <div className="space-y-4">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" />
+          <div className="bg-yellow-100 dark:bg-yellow-800 border border-yellow-300 dark:border-yellow-700 rounded-lg p-5">
+            <h3 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-3 flex items-center gap-3">
+              <Lightbulb className="w-5 h-5" />
               ¡Descubre el poder de la IA en tu cocina!
             </h3>
-            <p className="text-yellow-700 dark:text-yellow-400 text-sm">
+            <p className="text-yellow-800 dark:text-yellow-300 text-base">
               Chefcito AI te ayuda a crear recetas personalizadas basadas en tus ingredientes y preferencias.
             </p>
           </div>
@@ -247,7 +252,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
               <Sparkles className="w-4 h-4" /> Ideal para:
             </h4>
             <p className="text-purple-700 dark:text-purple-400 text-xs">
-              Personas que prefieren mostrar una foto del plato en vez de escribir largo o dictar ingredientes.
+              Personas que prefieren mostrar una foto del plato en vez de escribir o dictar ingredientes.
             </p>
           </div>
 
@@ -400,7 +405,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            className="fixed inset-0 bg-black bg-opacity-60 z-50"
           />
 
           {/* Modal */}
@@ -409,30 +414,31 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: isMobile ? 20 : 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`fixed z-50 bg-white dark:bg-gray-900 shadow-xl flex flex-col overflow-hidden ${
-              isMobile ? "inset-0 rounded-none" : "inset-4 md:inset-20 rounded-2xl"
+            className={`fixed z-50 bg-white dark:bg-gray-800 shadow-2xl flex flex-col overflow-hidden ${
+              isMobile ? "inset-0 rounded-none" : "inset-4 md:inset-20 rounded-3xl"
             }`}
           >
+            <ParticleBackground theme={theme} />
             {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="flex items-center justify-between p-5 sm:p-7 border-b border-gray-300 dark:border-gray-600">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Manual de Usuario</h2>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Aprende a usar Chefcito AI al máximo</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Manual de Usuario</h2>
+                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">Aprende a usar Chefcito AI al máximo</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {isMobile && (
-                  <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="p-3 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
                   </button>
                 )}
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <button onClick={onClose} className="p-3 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                  <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
                 </button>
               </div>
             </div>
@@ -445,11 +451,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
                   initial={isMobile ? { x: -300 } : false}
                   animate={isMobile ? { x: 0 } : false}
                   exit={isMobile ? { x: -300 } : undefined}
-                  className={`bg-gray-50 dark:bg-gray-900 overflow-y-auto ${
-                    isMobile ? "absolute inset-y-0 left-0 w-64 z-10 shadow-lg" : "w-64 border-r border-gray-200 dark:border-gray-700"
+                  className={`bg-gray-100 dark:bg-gray-800 overflow-y-auto ${
+                    isMobile ? "absolute inset-y-0 left-0 w-64 z-10 shadow-lg" : "w-64 border-r border-gray-300 dark:border-gray-600"
                   }`}
                 >
-                  <nav className="p-4 space-y-2">
+                  <nav className="p-5 space-y-3">
                     {sections.map((section) => {
                       const IconComponent = section.icon as any;
                       return (
@@ -459,14 +465,14 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
                             setActiveSection(section.id);
                             if (isMobile) setShowMobileSidebar(false);
                           }}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
+                          className={`w-full flex items-center gap-4 p-4 rounded-lg text-left transition-colors ${
                             activeSection === section.id
-                              ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              ? "bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
+                              : "text-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                           }`}
                         >
-                          <IconComponent className="w-4 h-4 flex-shrink-0" />
-                          <span className="text-sm font-medium">{section.title}</span>
+                          <IconComponent className="w-5 h-5 flex-shrink-0" />
+                          <span className="text-base font-medium">{section.title}</span>
                         </button>
                       );
                     })}
@@ -480,17 +486,17 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
               )}
 
               {/* Main */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-7">
                 <div className="max-w-3xl mx-auto">
                   {sections
                     .filter((section) => section.id === activeSection)
                     .map((section) => (
-                      <div key={section.id} className="space-y-4 sm:space-y-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-                            <section.icon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      <div key={section.id} className="space-y-5 sm:space-y-7">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-yellow-200 dark:bg-yellow-800 rounded-xl flex items-center justify-center">
+                            <section.icon className="w-6 h-6 text-yellow-700 dark:text-yellow-400" />
                           </div>
-                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{section.title}</h3>
+                          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{section.title}</h3>
                         </div>
                         {section.content}
                       </div>
