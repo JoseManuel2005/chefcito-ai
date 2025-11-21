@@ -95,26 +95,32 @@ export default function RecipeAnalysisPage() {
   /**
    * Confirma y envía la imagen del plato para identificación
    */
-  const confirmDishImage = async () => {
-    if (!pendingDishImage) return;
+  const confirmDishImage = async (file: File) => {
+    if (!file) return;
+    
     setIsIdentifying(true);
+    setPendingDishImage(file); // Actualizar estado para referencia
+    
     try {
-      const base64 = await fileToBase64(pendingDishImage);
+      const base64 = await fileToBase64(file);
       const res = await fetch("/api/identify-dish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64 }),
       });
       const data = await res.json();
+      
       if (res.ok && data.dishName) {
         setDishNameFromImage(data.dishName);
         setConfidence(data.confidence ?? null);
         setShowDishEdit(true);
       } else {
         showError(data.error || "No se pudo identificar el plato.");
+        setPendingDishImage(null);
       }
     } catch (err: any) {
       showError("Error al procesar la imagen.");
+      setPendingDishImage(null);
     } finally {
       setIsIdentifying(false);
     }
@@ -418,38 +424,25 @@ export default function RecipeAnalysisPage() {
                     exit="exit"
                   >
                     {loading ? (
-                      <motion.div
-                        className="flex items-center justify-center py-8 md:py-12"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
+                      <motion.div className="flex items-center justify-center py-12 md:py-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center">
-                          <motion.div
-                            className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-green-500 rounded-full mb-3 md:mb-4"
-                            animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-                            transition={{
-                              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
-                              scale: { duration: 1, repeat: Infinity },
-                            }}
-                          >
-                            <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                          </motion.div>
-                          <motion.p
-                            className="text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                          <div className="relative inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-4">
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-green-400 via-green-300 to-green-200 blur-md opacity-70 animate-pulse" />
+                            <div className="relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-gray-900 dark:bg-slate-900 rounded-full shadow-lg">
+                              <BookOpen className="w-7 h-7 md:w-8 md:h-8 text-green-300 animate-bounce" />
+                            </div>
+                          </div>
+                          <motion.p 
+                            className="text-gray-700 dark:text-gray-300 font-medium text-sm md:text-base" 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
                             transition={{ delay: 0.2 }}
                           >
-                            Analizando receta...
+                            Analizando plato...
                           </motion.p>
-                          <motion.p
-                            className="text-gray-500 dark:text-gray-500 text-xs mt-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                          >
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Esto puede tomar unos segundos
-                          </motion.p>
+                          </p>
                         </div>
                       </motion.div>
                     ) : analysis ? (

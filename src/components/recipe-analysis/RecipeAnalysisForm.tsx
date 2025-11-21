@@ -1,11 +1,12 @@
 // src/components/recipe-analysis/RecipeAnalysisForm.tsx
 "use client";
 
-import { useState, useRef, ChangeEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, AlertCircle, Camera, X } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Search, AlertCircle, Camera } from "lucide-react";
 import VoiceRecorder from "@/components/VoiceRecorder/VoiceRecorder";
 import { itemVariants } from "@/utils/animations";
+import RecipeImageUploadInput from "./RecipeImageUploadInput";
 
 interface RecipeAnalysisFormProps {
   recipe: string;
@@ -19,7 +20,7 @@ interface RecipeAnalysisFormProps {
   dishNameFromImage: string;
   setDishNameFromImage: (value: string) => void;
   confidence: number | null;
-  onConfirmDishImage: () => void;
+  onConfirmDishImage: (file: File) => void;
   onCancelDishEdit: () => void;
   onAnalyzeFromImage: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -49,38 +50,15 @@ export default function RecipeAnalysisForm({
   extractRecipeName,
 }: RecipeAnalysisFormProps) {
   const [showImageModal, setShowImageModal] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handler para cuando se selecciona un archivo
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 4 * 1024 * 1024) {
-      alert("La imagen es demasiado grande. Máximo 4MB.");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+  // Función simplificada que procesa la imagen directamente
+  const handleImageProcessed = (file: File) => {
     setPendingDishImage(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Limpiar preview
-  const clearPreview = () => {
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(null);
-    setPendingDishImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Handler para cerrar modal
-  const handleCloseImageModal = () => {
     setShowImageModal(false);
-    clearPreview();
+    // ✅ Pasar el archivo directamente, no depender del estado
+    onConfirmDishImage(file);
   };
+
   return (
     <div className="relative">
       {/* Glow detrás */}
@@ -100,13 +78,16 @@ export default function RecipeAnalysisForm({
             className="flex items-center gap-3 px-5 py-3 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-800/40 text-green-700 dark:text-green-300 font-bold rounded-2xl shadow-md border-2 border-dashed border-green-300 dark:border-green-700 transition-all duration-200 text-base group cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            disabled={loading || isIdentifying}
           >
-            <Camera className="w-6 h-6 animate-bounce-slow group-hover:scale-110 transition-transform" />
+            <span className="w-6 h-6 animate-bounce-slow group-hover:scale-110 transition-transform">
+              <Camera className="w-6 h-6" />
+            </span>
             <span>¿Tienes una foto del plato preparado?</span>
           </motion.button>
         </div>
 
-        {/* Modal de subida de imagen */}
+        {/* Modal de subida de imagen - procesamiento automático */}
         {showImageModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/50 dark:bg-black/40 backdrop-blur-sm animate-fade-in">
             <div className="relative w-full max-w-md mx-auto p-4">
@@ -117,113 +98,34 @@ export default function RecipeAnalysisForm({
                   </h3>
                   <button
                     type="button"
-                    onClick={handleCloseImageModal}
+                    onClick={() => setShowImageModal(false)}
                     className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
-
-                {/* Input de archivo oculto */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
+                <RecipeImageUploadInput
+                  onImageProcessed={handleImageProcessed}
+                  disabled={loading || isIdentifying}
                 />
-
-                {/* Área de preview o botón de subida */}
-                {preview ? (
-                  <div className="space-y-4">
-                    <div className="relative rounded-lg overflow-hidden">
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="w-full h-64 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={clearPreview}
-                        className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowImageModal(false);
-                        }}
-                        className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-xl font-medium transition-colors cursor-pointer"
-                      >
-                        Confirmar imagen
-                      </button>
-                      <button
-                        type="button"
-                        onClick={clearPreview}
-                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-xl font-medium transition-colors cursor-pointer"
-                      >
-                        Cambiar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-20 border-2 border-dashed border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex flex-col items-center justify-center gap-3 cursor-pointer"
-                    >
-                      <Camera className="w-12 h-12 text-green-600 dark:text-green-400" />
-                      <span className="text-green-700 dark:text-green-300 font-medium">
-                        Seleccionar imagen
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Máximo 4MB
-                      </span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Confirmación antes de analizar */}
-        {pendingDishImage && !showDishEdit && (
-          <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              ¿Estás seguro de usar esta foto para identificar el plato?
-            </p>
-            <div className="flex gap-2 mt-2">
-              <button
-                type="button"
-                onClick={onConfirmDishImage}
-                disabled={isIdentifying}
-                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm rounded font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isIdentifying ? "Analizando..." : "Sí, usar esta foto"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPendingDishImage(null)}
-                className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm rounded font-medium cursor-pointer"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Bloque de edición tras identificación */}
+        {/* Solo mostrar edición si la confianza es baja o el usuario quiere corregir */}
         {showDishEdit && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+          >
             <div className="flex items-start gap-2 mb-3">
               <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                ¿Es este el plato correcto? Puedes corregir el nombre antes de analizar.
+                Identificamos "{dishNameFromImage}". ¿Es correcto?
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 mb-3">
@@ -232,7 +134,7 @@ export default function RecipeAnalysisForm({
                 value={dishNameFromImage}
                 onChange={(e) => setDishNameFromImage(e.target.value)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-                placeholder="Nombre del plato"
+                placeholder="Corrige el nombre si es necesario"
               />
               {confidence !== null && (
                 <span className="px-3 py-2 text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg whitespace-nowrap">
@@ -246,7 +148,7 @@ export default function RecipeAnalysisForm({
                 onClick={onAnalyzeFromImage}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded font-medium cursor-pointer"
               >
-                Analizar esta receta
+                Analizar receta
               </button>
               <button
                 type="button"
@@ -256,7 +158,25 @@ export default function RecipeAnalysisForm({
                 Cancelar
               </button>
             </div>
-          </div>
+          </motion.div>
+        )}
+
+        {/* Indicador cuando está identificando */}
+        {isIdentifying && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 flex items-center gap-3"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full"
+            />
+            <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+              Identificando plato en la foto...
+            </span>
+          </motion.div>
         )}
 
         <form onSubmit={onSubmit} className="space-y-4 md:space-y-6">
