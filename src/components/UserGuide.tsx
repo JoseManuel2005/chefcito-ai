@@ -60,11 +60,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-2 flex items-center gap-2">
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-800 dark:text-purple-300 text-sm mb-2 flex items-center gap-2">
                 <Target className="w-4 h-4" /> ¿Qué puedes hacer?
               </h4>
-              <ul className="text-blue-700 dark:text-blue-400 text-xs space-y-2">
+              <ul className="text-purple-700 dark:text-purple-400 text-xs space-y-2">
                 <li className="flex items-center gap-2"><Sparkles className="w-3 h-3" /> Generar recetas con ingredientes disponibles</li>
                 <li className="flex items-center gap-2"><Eye className="w-3 h-3" /> Analizar recetas existentes</li>
                 <li className="flex items-center gap-2"><Heart className="w-3 h-3" /> Guardar y gestionar favoritos</li>
@@ -132,9 +132,9 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mt-4">
-            <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4" /> Consejos</h4>
-            <ul className="text-blue-700 dark:text-blue-400 text-xs space-y-2">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mt-4">
+            <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm mb-2 flex items-center gap-2"><Lightbulb className="w-4 h-4" /> Consejos</h4>
+            <ul className="text-yellow-700 dark:text-yellow-400 text-sm">
               <li className="flex items-center gap-2"><Plus className="w-3 h-3" /> Cuantos más ingredientes agregues, más variedad.</li>
               <li className="flex items-center gap-2"><Clock className="w-3 h-3" /> Los próximos a vencer se priorizan en recetas.</li>
               <li className="flex items-center gap-2"><Heart className="w-3 h-3" /> Consideramos alergias y preferencias.</li>
@@ -149,16 +149,16 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: PlayCircle,
       content: (
         <div className="space-y-4">
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-            <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mt-4">
+            <h3 className="font-semibold text-green-800 dark:text-green-300 text-sm mb-2 flex items-center gap-2">
               <Volume2 className="w-4 h-4" /> Control por voz
             </h3>
-            <p className="text-purple-700 dark:text-purple-400 text-sm">Habla tus ingredientes con el micrófono y edítalos antes de generar recetas.</p>
+            <p className="text-green-700 dark:text-green-400 text-sm">Habla tus ingredientes con el micrófono y edítalos antes de generar recetas.</p>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">1</div>
+              <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">1</div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">Graba y edita <Novedad /></p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Usa el botón de micrófono. La transcripción aparece editable para corregir nombres o separar por comas.</p>
@@ -166,7 +166,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">2</div>
+              <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">2</div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">Mezcla voz + texto <Novedad /></p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Se combinan sin duplicados con los ingredientes escritos.</p>
@@ -174,7 +174,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">3</div>
+              <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">3</div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">Escucha recetas (TTS) <Novedad /></p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Cada tarjeta tiene un botón de <b>play/pausa</b> para escuchar ingredientes y pasos. El audio sigue solo para la receta activa.</p>
@@ -182,7 +182,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">4</div>
+              <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">4</div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">Permisos y compatibilidad</p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Si el navegador pide permisos de micrófono, acéptalos. En iOS puede requerir interacción previa (tocar un botón) para iniciar audio.</p>
@@ -265,11 +265,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: Share2,
       content: (
         <div className="space-y-4">
-          <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-4">
-            <h3 className="font-semibold text-sky-800 dark:text-sky-300 mb-2 flex items-center gap-2">
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mt-4">
+            <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center gap-2">
               <Share2 className="w-4 h-4" /> Comparte tus recetas
             </h3>
-            <p className="text-sky-700 dark:text-sky-400 text-sm">Desde el menú de cada receta puedes compartir o copiar fácilmente.</p>
+            <p className="text-green-700 dark:text-green-400 text-sm">Desde el menú de cada receta puedes compartir o copiar fácilmente.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -293,9 +293,9 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
-            <h4 className="font-semibold text-amber-800 dark:text-amber-300 text-sm mb-2 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Notas</h4>
-            <ul className="text-amber-800 dark:text-amber-300 text-xs space-y-2">
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mt-4">
+            <h4 className="font-semibold text-green-800 dark:text-green-300 text-sm mb-2 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Notas</h4>
+            <ul className="text-green-800 dark:text-green-300 text-xs space-y-2">
               <li>Si tu dispositivo no soporta compartir archivos, la imagen se descarga automáticamente.</li>
               <li>Si ves el mensaje de límite (<code>429</code>), espera un momento antes de volver a generar.</li>
             </ul>
@@ -309,11 +309,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: BookText,
       content: (
         <div className="space-y-4">
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center gap-2">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2 flex items-center gap-2">
               <Eye className="w-4 h-4" /> Descubre ingredientes
             </h3>
-            <p className="text-green-700 dark:text-green-400 text-sm">Analiza cualquier receta para obtener su lista de ingredientes y pasos de preparación.</p>
+            <p className="text-yellow-700 dark:text-yellow-400 text-sm">Analiza cualquier receta para obtener su lista de ingredientes y pasos de preparación.</p>
           </div>
 
           <div className="space-y-3">
@@ -343,9 +343,9 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mt-4">
-            <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-sm mb-2 flex items-center gap-2"><Target className="w-4 h-4" /> Mejores prácticas</h4>
-            <ul className="text-blue-700 dark:text-blue-400 text-xs space-y-2">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mt-4">
+            <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm mb-2 flex items-center gap-2"><Target className="w-4 h-4" /> Mejores prácticas</h4>
+            <ul className="text-yellow-700 dark:text-yellow-400 text-xs space-y-2">
               <li className="flex items-center gap-2"><ClipboardList className="w-3 h-3" /> Copia recetas completas para mejores resultados</li>
               <li className="flex items-center gap-2"><Scale className="w-3 h-3" /> Incluye cantidades y medidas cuando sea posible</li>
               <li className="flex items-center gap-2"><Globe className="w-3 h-3" /> Podemos identificar ingredientes regionales</li>
@@ -360,11 +360,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: Shield,
       content: (
         <div className="space-y-4">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2 flex items-center gap-2">
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mt-4">
+            <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center gap-2">
               <Settings className="w-4 h-4" /> Personaliza tu experiencia
             </h3>
-            <p className="text-yellow-700 dark:text-yellow-400 text-sm">Configura tus preferencias para recomendaciones más precisas y seguras.</p>
+            <p className="text-green-700 dark:text-green-400 text-sm">Configura tus preferencias para recomendaciones más precisas y seguras.</p>
           </div>
 
           <div className="space-y-4">
