@@ -219,7 +219,8 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">1</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p> <Novedad /></p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p> 
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Sube una foto de tu plato o ingredientes.</p>
                 </div>
               </div>
