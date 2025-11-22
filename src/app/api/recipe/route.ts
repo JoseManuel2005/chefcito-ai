@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
 
-// 🔒 RATE LIMITING (solo para MVP - en memoria)
+// RATE LIMITING (solo para MVP - en memoria)
 // En producción, se debe usar Redis o una base de datos externa.
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 const MAX_REQUESTS = 5; // máximo 5 peticiones por minuto
@@ -182,36 +182,36 @@ export async function POST(req: Request) {
         : others;
 
       // === Prompt final para generación de recetas ===
-      const prompt = `Eres un chef experto comprometido con la seguridad alimentaria y la reducción del desperdicio.
-Sigue estas reglas estrictamente:
-- ${allergies.length > 0 ? `NUNCA uses, sugieras ni menciones ninguno de estos alérgenos: ${allergies.join(", ")}.` : "No hay alergias reportadas."}
-- ${preferredCuisines.length > 0 ? `Prioriza recetas inspiradas en: ${preferredCuisines.join(", ")}.` : "Sin preferencias culinarias específicas."}
-- ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí.` : "Ubicación no especificada."}
-
-ANTES DE GENERAR RECETAS:
-1. Filtra los ingredientes y conserva SOLO aquellos que sean comestibles, reales y seguros para consumo humano.
-2. Ignora completamente ingredientes no comestibles como: piedra, lapiz, plastico, metal, papel, noingrediente, etc.
-3. Si después del filtrado no quedan ingredientes válidos, devuelve un array vacío [].
-4. Si por ejemplo introduce "piedra" y luego "pollo" (ingrediente real), olvida "piedra" y usa los ingredientes que si son comestibles.
-
-Ingredientes disponibles para usar (todos están en buen estado):
-- 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
-- ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
-
-Genera hasta 2 recetas cortas, realistas, seguras y deliciosas usando SOLO los ingredientes disponibles.
-Puedes usar solo un ingrediente si es necesario.
-Para cada receta, estima un tiempo de preparación REALISTA en minutos (ej: "15-20 minutos", "45-60 minutos").
-Si no es posible crear recetas útiles, devuelve un array vacío [].
-
-Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown):
-[
-  {
-    "nombre": "Nombre de la receta",
-    "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-    "pasos": ["Paso 1", "Paso 2", ...],
-    "tiempo": "25-30 minutos"
-  }
-]`;
+      const prompt = `Eres un chef experto comprometido con la seguridad alimentaria, la reducción del desperdicio y la cocina latinoamericana auténtica.
+          
+      Sigue estas reglas estrictamente:
+      - ${allergies.length > 0 ? `NUNCA uses, sugieras ni menciones ninguno de estos alérgenos: ${allergies.join(", ")}.` : "No hay alergias reportadas."}
+      - ${preferredCuisines.length > 0 ? `Prioriza recetas inspiradas en: ${preferredCuisines.join(", ")}.` : "Sin preferencias culinarias específicas."}
+      - ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí (ej. en Colombia: bandeja paisa, ajiaco, sancocho).` : "Ubicación no especificada."}
+          
+      ANTES DE GENERAR RECETAS:
+      1. Filtra los ingredientes y conserva SOLO aquellos que sean comestibles, reales y seguros (ignora "piedra", "papel", etc.).
+      2. Prioriza SIEMPRE los ingredientes que vencen HOY o en los próximos 2 días.
+      3. Si solo tienes un ingrediente útil, genera una receta simple pero realista (ej. "huevo frito", "plátano asado").
+          
+      Ingredientes disponibles:
+      - 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
+      - ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
+          
+      Genera hasta 2 recetas **realistas y específicas**, usando SOLO los ingredientes disponibles.
+      - Incluye platos tradicionales si los ingredientes lo permiten (ej. si tienes arroz, frijoles y carne → "bandeja paisa").
+      - Estima tiempos REALISTAS (ej: "30-40 minutos", no "5 minutos").
+      - Si no es posible crear recetas útiles, devuelve [].
+          
+      Devuelve SOLO un JSON en este formato exacto:
+      [
+        {
+          "nombre": "Nombre de la receta",
+          "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+          "pasos": ["Paso 1", "Paso 2", ...],
+          "tiempo": "30-40 minutos"
+        }
+      ]`;
 
       // Llamada a OpenAI para generar recetas.
       const completion = await openai.chat.completions.create({
@@ -263,41 +263,69 @@ Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown)
         userContext = "No hay preferencias específicas del usuario. ";
       }
 
-      const prompt = `Eres un chef experto con conocimiento profundo de **cocina global**, especialmente de **platos tradicionales y cotidianos de LATINOAMÉRICA (Colombia, México, Argentina, Perú, Chile, etc.)**.
-
-${userContext}
-
-**Definición clave**: Una "receta válida" incluye **cualquier plato comestible real**, ya sea:
-- Platos complejos: "bandeja paisa", "ajiaco", "ceviche"
-- Platos simples: "carne asada", "milanesa", "arroz con huevo", "ensalada cesar", "sopa de cebolla"
-- Platos internacionales: "paella", "ramen", "curry de pollo", "lasaña"
-- Platos de un solo ingrediente preparado: "huevo frito", "plátano asado", "queso fundido"
-
-**No son recetas válidas**: cosas no comestibles, absurdas o peligrosas (ej: "agua hervida", "ensalada de piedras", "sopa de plástico").
-
-**ANTES DE ANALIZAR**:
-1. Si el nombre "${recipe}" coincide con un plato de la lista de ejemplos arriba (o similar), **trátalo como una receta válida, incluso si es simple**.
-2. Si es un plato regional latinoamericano (ej: "sancocho", "lechona", "tamales", "arepas rellenas", "pabellón criollo", "huasquito"), **asúmelo como auténtico y real**.
-3. Solo rechaza si es claramente no comestible.
-
-**Instrucciones para recetas válidas**:
-- **Ingredientes**: lista solo los esenciales y realistas (ej. "milanesa": carne molida o filete, huevo, pan rallado, aceite; "carne asada": carne de res, sal, limón, ajo).
-- **Tiempo**: sé realista (una "milanesa" toma 20-30 min, no 5 min).
-- **Pasos**: 3-6 pasos claros, prácticos, sin jerga técnica innecesaria.
-- **Comentario**: 
-  • Menciona si faltan ingredientes comunes (ej: "¿quieres agregar papas fritas como acompañamiento?").
-  • Sugiere sustituciones si hay alergias (${allergies.length > 0 ? 'alérgenos: ' + allergies.join(', ') : 'sin alergias'}).
-  • Si el plato tiene variantes regionales, menciónalo brevemente (ej: "En Colombia se sirve con arroz y patacones").
-
-**Formato de salida**: Devuelve **SOLO un JSON** con este formato exacto:
-{
-  "receta": "Nombre de la receta",
-  "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-  "pasos": ["Paso 1", "Paso 2", ...],
-  "tiempo": "20-30 minutos",
-  "comentario": "Notas útiles sobre autenticidad, ingredientes faltantes o adaptación a tus preferencias."
-}`;
-      
+      const prompt = `Eres un chef experto en GASTRONOMÍA AUTÉNTICA DE LATINOAMÉRICA, con conocimiento verificado y no especulativo de Colombia, México, Argentina, Perú y Chile.
+          
+      ${userContext}
+          
+      ⚠️ **REGLA ABSOLUTA E INNEGOCIABLE:**  
+      El nombre de la receta proporcionado ("${recipe}") **ES INALTERABLE**.  
+      NO lo cambies, NO lo reinterpretas, NO lo traduzcas, NO asumas que quiso decir otra cosa.  
+      Debes evaluar EXACTAMENTE ese nombre.
+          
+      ---
+          
+      ### ✅ **CRITERIO ULTRA ESTRICTO PARA VALIDAR SI ES UNA RECETA REAL**
+          
+      Una receta se considera **VÁLIDA** SOLO si cumple TODAS las siguientes condiciones:
+          
+      1. **Debe ser comestible**: alimentos reales, ingredientes posibles de ingerir por humanos.  
+      2. **Debe ser un plato, bebida o preparación culinaria real** (regional, tradicional, popular o casera).  
+      3. **Debe existir o poder ser encontrado en la gastronomía de algún país hispano, NO inventes.**  
+      4. **No infieras recetas a partir de nombres absurdos.**
+          
+      Se considera **NO VÁLIDA** si:
+          
+      - Contiene elementos **no comestibles** ("plástico", "cemento", "piedras", "metal", "tierra", "jabón").  
+      - Es **absurda**, irónica o obviamente inventada ("sopa de piedras", "arepa de aire", "arroz de colores mágicos").  
+      - Es un **objeto o concepto**, NO comida (“martillo frito”, “wifi al horno”, “cable asado”).  
+      - Parezca un chiste, metáfora o una receta inexistente usada solo en cuentos.  
+          
+      ⚠️ **Si tienes cualquier duda entre real vs. inventado, debes asumir NO VÁLIDA. No inventes.**
+          
+      ---
+          
+      ### 🧑‍🍳 **SI ES VÁLIDA:**  
+      Genera una receta auténtica y realista:
+      - Ingredientes concretos (no inventados, no exóticos sin razón).
+      - Tiempos reales basados en técnicas típicas.
+      - Pasos prácticos (3-6), secuenciales y aplicables.
+      - Comentario cultural: origen, región, notas auténticas. NO inventes historia si no es segura.
+          
+      ---
+          
+      ### ❌ **SI ES NO VÁLIDA:**  
+      Responde EXACTAMENTE esto:
+      {
+        "receta": "${recipe}",
+        "ingredientes": [],
+        "pasos": [],
+        "tiempo": "0 minutos",
+        "comentario": "⚠️ La receta '${recipe}' no es un plato comestible real. Por favor ingresa un nombre válido."
+      }
+          
+      ---
+          
+      ### 📌 FORMATO DE SALIDA (OBLIGATORIO, SOLO JSON, SIN TEXTO ADICIONAL):
+          
+      {
+        "receta": "${recipe}",
+        "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+        "pasos": ["Paso 1", "Paso 2", ...] (no pongas "1...." esos números ya se ponen automáticamente),
+        "tiempo": "XX-XX minutos",
+        "comentario": "Notas útiles sobre autenticidad y contexto."
+      }
+      `;
+            
       // Llamada a OpenAI para analizar la receta.
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
