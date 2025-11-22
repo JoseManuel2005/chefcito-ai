@@ -48,7 +48,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       icon: ChefHat,
       content: (
         <div className="space-y-4">
-          <div className="bg-yellow-100 dark:bg-yellow-800 border border-yellow-300 dark:border-yellow-700 rounded-lg p-5">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <h3 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-3 flex items-center gap-3">
               <Lightbulb className="w-5 h-5" />
               ¡Descubre el poder de la IA en tu cocina!
@@ -199,13 +199,13 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
       content: (
         <div className="space-y-4">
 
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-            <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2 flex items-center gap-2">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2 flex items-center gap-2">
               <ImageIcon className="w-4 h-4" />
               Agrega ingredientes por foto
               <Novedad />
             </h3>
-            <p className="text-purple-700 dark:text-purple-400 text-sm">
+            <p className="text-yellow-700 dark:text-yellow-400 text-sm">
               Sube una foto del plato o ingredientes y la IA los identificará automáticamente para generar recetas más precisas.
             </p>
           </div>
@@ -233,7 +233,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">3</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Opcional</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Opcional *</p>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Añade o edita los ingredientes detectados si deseas.</p>
                 </div>
               </div>
@@ -247,11 +247,11 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             </div>
           </div>
 
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 mt-4">
-            <h4 className="font-semibold text-purple-800 dark:text-purple-300 text-sm mb-2 flex items-center gap-2">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mt-4">
+            <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm mb-2 flex items-center gap-2">
               <Sparkles className="w-4 h-4" /> Ideal para:
             </h4>
-            <p className="text-purple-700 dark:text-purple-400 text-xs">
+            <p className="text-yellow-700 dark:text-yellow-400 text-xs">
               Personas que prefieren mostrar una foto del plato en vez de escribir o dictar ingredientes.
             </p>
           </div>
