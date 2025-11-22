@@ -160,7 +160,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">1</div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">Graba y edita <Novedad /></p>
+                <p className="font-medium text-gray-900 dark:text-white text-sm">Graba y edita </p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Usa el botón de micrófono. La transcripción aparece editable para corregir nombres o separar por comas.</p>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">2</div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">Mezcla voz + texto <Novedad /></p>
+                <p className="font-medium text-gray-900 dark:text-white text-sm">Mezcla voz + texto </p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Se combinan sin duplicados con los ingredientes escritos.</p>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="w-6 h-6 bg-green-800 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">3</div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">Escucha recetas (TTS) <Novedad /></p>
+                <p className="font-medium text-gray-900 dark:text-white text-sm">Escucha recetas (TTS) </p>
                 <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Cada tarjeta tiene un botón de <b>play/pausa</b> para escuchar ingredientes y pasos. El audio sigue solo para la receta activa.</p>
               </div>
             </div>
@@ -219,29 +219,28 @@ export default function UserGuide({ isOpen, onClose }: UserGuideProps) {
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">1</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p> <Novedad /></p>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto</p> 
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Inserta la foto <Novedad /></p> 
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Sube una foto de tu plato o ingredientes.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">2</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Analiza con IA</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Analiza con IA <Novedad /></p>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Chefcito AI identificará los ingredientes, cantidades y pasos cuando sea posible.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">3</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Opcional *</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Opcional * <Novedad /></p>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Añade o edita los ingredientes detectados si deseas.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">4</div>
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">Revisa los resultados</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Revisa los resultados <Novedad /></p>
                   <p className="text-gray-600 dark:text-gray-400 text-xs mt-1"> Obtén una lista organizada de ingredientes y comentarios útiles.</p>
                 </div>
               </div>
