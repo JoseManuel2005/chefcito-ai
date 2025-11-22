@@ -592,25 +592,30 @@ export default function RecipeAnalysisPage() {
                                 type="button"
                                 onClick={async () => {
                                   const nombre = analysis.receta || "Análisis de receta";
+                                  const ingredientes = (analysis.ingredientes || []) as string[];
                                   const data = {
                                     nombre,
-                                    ingredientes: (analysis.ingredientes || []) as string[],
+                                    ingredientes,
                                     pasos: (analysis.pasos || []) as string[],
                                     tiempo: (analysis.tiempo || "") as string,
                                   };
-                                  const wasFav = isFavorite(nombre);
+                                  const wasFav = isFavorite(nombre, ingredientes);
                                   const ok = await toggleFavorite(data);
                                   if (!ok) {
                                     showError("Inicia sesión para guardar favoritos", 4000);
                                     return;
                                   }
-                                  showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+                                  if (wasFav) {
+                                    showError("Eliminado de favoritos");
+                                  } else {
+                                    showSuccess("Agregado a favoritos");
+                                  }
                                 }}
                                 className={`p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-green-50 dark:hover:bg-green-900/20`}
-                                aria-label={isFavorite(analysis.receta || "Análisis de receta") ? "Quitar de favoritos" : "Agregar a favoritos"}
+                                aria-label={isFavorite(analysis.receta || "Análisis de receta", analysis.ingredientes || []) ? "Quitar de favoritos" : "Agregar a favoritos"}
                               >
                                 <Heart
-                                  className={`w-5 h-5 transition-colors ${isFavorite(analysis.receta || "Análisis de receta")
+                                  className={`w-5 h-5 transition-colors ${isFavorite(analysis.receta || "Análisis de receta", analysis.ingredientes || [])
                                       ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
                                       : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
                                     }`}
