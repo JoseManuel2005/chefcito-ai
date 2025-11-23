@@ -1,9 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChefHat } from "lucide-react";
 import RecipeCard from "./RecipeCard";
+import { useStepVisualization } from "@/hooks/useStepVisualization";
 import type { Recipe } from "@/hooks/useRecipeSearch";
+import StepCarousel from '@/components/StepCarousel';
 import {
   formatRecipeForText,
   copyToClipboard,
@@ -11,9 +14,6 @@ import {
   shareRecipeAsImage,
 } from "@/utils/shareUtils";
 
-/**
- * Props del componente RecipeList
- */
 interface RecipeListProps {
   recipes: Recipe[];
   loading: boolean;
@@ -37,28 +37,6 @@ interface RecipeListProps {
   generateDishImage: (recipeId: string, recipeName: string, ingredients: string[], onError: (msg: string) => void) => void;
 }
 
-/**
- * Componente contenedor que renderiza la lista de recetas
- * 
- * Responsabilidades:
- * - Renderizar múltiples RecipeCard con sus props
- * - Mostrar estado de carga con animación
- * - Manejar lógica de TTS, favoritos y compartir para cada receta
- * - Generar texto formateado para compartir
- * - Coordinar acciones entre recetas (ej: detener TTS al generar imagen)
- * 
- * @component
- * @example
- * ```tsx
- * <RecipeList
- *   recipes={recipes}
- *   loading={false}
- *   isMobile={false}
- *   currentTTSIndex={0}
- *   ttsSpeak={(text) => {}}
- * />
- * ```
- */
 export default function RecipeList({
   recipes,
   loading,
@@ -81,6 +59,10 @@ export default function RecipeList({
   loadingDishImage,
   generateDishImage,
 }: RecipeListProps) {
+  // 👇 Importado correctamente
+  const [expandedRecipeIndex, setExpandedRecipeIndex] = useState<number | null>(null);
+  const { stepImages, loadingSteps, generateStepImage } = useStepVisualization();
+
   if (loading) {
     return (
       <motion.div className="flex items-center justify-center py-12 md:py-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -113,23 +95,6 @@ export default function RecipeList({
 
   return (
     <motion.div className="space-y-4 md:space-y-6">
-      {/* <motion.div
-        className="text-center mb-6 md:mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <h3 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
-          Tus recetas
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300">
-            personalizadas
-          </span>
-        </h3>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          {recipes.length} {recipes.length === 1 ? 'receta encontrada' : 'recetas encontradas'}
-        </p>
-      </motion.div> */}
-
       {recipes.map((recipeItem, index) => {
         const ttsText = `
           Receta: ${recipeItem.nombre || 'Sin nombre'}.
@@ -139,72 +104,117 @@ export default function RecipeList({
 
         const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
         const isFav = isFavorite(nombreReceta);
+        const isExpanded = expandedRecipeIndex === index;
+        const recipeId = recipeItem.id || Math.random().toString();
 
         return (
-          <RecipeCard
-            key={recipeItem.id || index}
-            recipe={recipeItem}
-            index={index}
-            isMobile={isMobile}
-            isFavorite={isFav}
-            onToggleFavorite={async () => {
-              const data = {
-                nombre: nombreReceta,
-                ingredientes: (recipeItem.ingredientes || []) as string[],
-                pasos: (recipeItem.pasos || []) as string[],
-                tiempo: (recipeItem.tiempo || "") as string,
-              };
-              const wasFav = isFav;
-              const ok = await toggleFavorite(data);
-              if (!ok) {
-                showError("Inicia sesión para guardar favoritos", 4000);
-                return;
-              }
-              showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
-            }}
-            currentTTSIndex={currentTTSIndex}
-            ttsStatus={ttsStatus}
-            onTTSClick={() => {
-              if (currentTTSIndex === index) {
-                if (ttsStatus === "playing") ttsPause();
-                else if (ttsStatus === "paused") ttsResume();
-              } else {
-                ttsStop();
-                setCurrentTTSIndex(index);
-                ttsSpeak(ttsText);
-              }
-            }}
-            openMenuIndex={openMenuIndex}
-            setOpenMenuIndex={setOpenMenuIndex}
-            onShareText={async () => {
-              setOpenMenuIndex(null);
-              const shareText = formatRecipeForText(recipeItem, index);
-              const ok = await shareSmart(shareText, nombreReceta);
-              if (ok) showSuccess("Hoja de compartir abierta", 1800);
-            }}
-            onCopyText={async () => {
-              setOpenMenuIndex(null);
-              const shareText = formatRecipeForText(recipeItem, index);
-              const ok = await copyToClipboard(shareText);
-              ok ? showSuccess("Receta copiada", 1800) : showError("No se pudo copiar", 1800);
-            }}
-            onShareImage={async () => {
-              setOpenMenuIndex(null);
-              await shareRecipeAsImage(recipeItem, index, showSuccess, showError);
-            }}
-            dishImage={dishImages[recipeItem.id]}
-            showDishImage={showDishImage[recipeItem.id] || false}
-            loadingDishImage={loadingDishImage[recipeItem.id] || false}
-            onGenerateImage={() => {
-              if (currentTTSIndex !== null) ttsStop();
-              generateDishImage(
-                recipeItem.id,
-                recipeItem.nombre || '',
-                recipeItem.ingredientes || [],
-                showError
-              );
-            }}
-          />
+          <div key={recipeId}>
+            <RecipeCard
+              recipe={recipeItem}
+              index={index}
+              isMobile={isMobile}
+              isFavorite={isFav}
+              onToggleFavorite={async () => {
+                const data = {
+                  nombre: nombreReceta,
+                  ingredientes: (recipeItem.ingredientes || []) as string[],
+                  pasos: (recipeItem.pasos || []) as string[],
+                  tiempo: (recipeItem.tiempo || "") as string,
+                };
+                const wasFav = isFav;
+                const ok = await toggleFavorite(data);
+                if (!ok) {
+                  showError("Inicia sesión para guardar favoritos", 4000);
+                  return;
+                }
+                showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+              }}
+              currentTTSIndex={currentTTSIndex}
+              ttsStatus={ttsStatus}
+              onTTSClick={() => {
+                if (currentTTSIndex === index) {
+                  if (ttsStatus === "playing") ttsPause();
+                  else if (ttsStatus === "paused") ttsResume();
+                } else {
+                  ttsStop();
+                  setCurrentTTSIndex(index);
+                  ttsSpeak(ttsText);
+                }
+              }}
+              openMenuIndex={openMenuIndex}
+              setOpenMenuIndex={setOpenMenuIndex}
+              onShareText={async () => {
+                setOpenMenuIndex(null);
+                const shareText = formatRecipeForText(recipeItem, index);
+                const ok = await shareSmart(shareText, nombreReceta);
+                if (ok) showSuccess("Hoja de compartir abierta", 1800);
+              }}
+              onCopyText={async () => {
+                setOpenMenuIndex(null);
+                const shareText = formatRecipeForText(recipeItem, index);
+                const ok = await copyToClipboard(shareText);
+                ok ? showSuccess("Receta copiada", 1800) : showError("No se pudo copiar", 1800);
+              }}
+              onShareImage={async () => {
+                setOpenMenuIndex(null);
+                await shareRecipeAsImage(recipeItem, index, showSuccess, showError);
+              }}
+              dishImage={dishImages[recipeId]}
+              showDishImage={showDishImage[recipeId] || false}
+              loadingDishImage={loadingDishImage[recipeId] || false}
+              onGenerateImage={() => {
+                if (currentTTSIndex !== null) ttsStop();
+                generateDishImage(
+                  recipeId,
+                  recipeItem.nombre || '',
+                  recipeItem.ingredientes || [],
+                  showError
+                );
+              }}
+            />
+
+            {/* Botón de guía visual */}
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isExpanded) {
+                    setExpandedRecipeIndex(null);
+                  } else {
+                    setExpandedRecipeIndex(index);
+                    if (!stepImages[index]) {
+                      generateStepImage(index.toString(), recipeItem.pasos || []);
+                    }
+                  }
+                }}
+                className="px-4 py-1.5 text-sm bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-800/50 rounded font-medium transition-colors"
+              >
+                {isExpanded ? 'Ocultar guía visual' : 'Ver guía visual'}
+              </button>
+            </div>
+
+            {/* Carrusel de pasos */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4"
+                >
+                  <h5 className="font-semibold text-gray-900 dark:text-white mb-3 text-center">Guía visual de preparación</h5>
+              
+                  {loadingSteps[index] ? (
+                    <div className="flex justify-center py-4">
+                      <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : stepImages[index] ? (
+                    <StepCarousel steps={recipeItem.pasos || []} images={stepImages[index]} />
+                  ) : null}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         );
       })}
     </motion.div>
