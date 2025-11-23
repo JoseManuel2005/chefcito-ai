@@ -1,9 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Clock, Search, Camera, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Clock, Search, Camera, CheckCircle2, Eye, Sparkles } from "lucide-react";
 import VoiceRecorder from '@/components/VoiceRecorder/VoiceRecorder';
-import ImageUploadInput from '@/components/ImageUploadInput';
+import ImageUploadInputWithTypeSelector from '@/components/ImageUploadInputWithTypeSelector';
 import EditableChips from '@/components/EditableChips';
 import { itemVariants } from "@/utils/animations";
 import { useState } from "react";
@@ -30,9 +30,13 @@ interface IngredientFormProps {
   showImageChips: boolean;
   ingredientsFromImage: string[];
   setIngredientsFromImage: (items: string[]) => void;
+  detectionConfidence?: number | null;
+  detectionType?: 'ocr' | 'visual' | null;
   onSaveImageIngredients: () => void;
   onCancelImageIngredients: () => void;
   onImageProcessed: (rawText: string) => void;
+  onRawIngredientsDetected: (ingredients: string[], confidence: number) => void;
+  userPreferences?: any;
 }
 
 /**
@@ -74,9 +78,13 @@ export default function IngredientForm({
   showImageChips,
   ingredientsFromImage,
   setIngredientsFromImage,
+  detectionConfidence,
+  detectionType,
   onSaveImageIngredients,
   onCancelImageIngredients,
   onImageProcessed,
+  onRawIngredientsDetected,
+  userPreferences,
 }: IngredientFormProps) {
   const [showImageModal, setShowImageModal] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -87,6 +95,12 @@ export default function IngredientForm({
     setShowImageModal(false);
     await onImageProcessed(rawText);
     setIsProcessingImage(false);
+  };
+
+  // Handler para cuando se detectan ingredientes crudos
+  const handleRawIngredientsDetected = (ingredients: string[], confidence: number) => {
+    setShowImageModal(false);
+    onRawIngredientsDetected(ingredients, confidence);
   };
 
   // Handler para cerrar modal (cancelar)
@@ -108,19 +122,19 @@ export default function IngredientForm({
         </motion.button>
       </div>
 
-      {/* Modal de subida de imagen */}
+      {/* Modal de subida de imagen con selector de tipo */}
       {showImageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/50 dark:bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md mx-auto p-4">
-            <div className="absolute top-2 right-2 z-10">
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/50 dark:bg-black/40 backdrop-blur-sm animate-fade-in p-4">
+          <div className="w-full max-w-4xl mx-auto max-h-[80vh] overflow-y-auto -mt-40">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-4 border border-amber-200 dark:border-amber-300">
-              <ImageUploadInput
+              <ImageUploadInputWithTypeSelector
                 onImageProcessed={handleImageProcessed}
+                onRawIngredientsDetected={handleRawIngredientsDetected}
                 onError={() => { }}
                 disabled={false}
+                userPreferences={userPreferences}
               />
-              <div className="flex justify-center mt-2">
+              <div className="flex justify-center mt-4">
                 <button
                   type="button"
                   onClick={handleCloseImageModal}
@@ -186,19 +200,53 @@ export default function IngredientForm({
                 </button>
               </div>
             ) : (
-              <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 p-5 rounded-2xl border-2 border-yellow-300/50 dark:border-yellow-700/50 shadow-lg">
+              <div className={`p-5 rounded-2xl border-2 shadow-lg ${
+                detectionType === 'visual' 
+                  ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300/50 dark:border-green-700/50'
+                  : 'bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300/50 dark:border-yellow-700/50'
+              }`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                  <h4 className="text-base font-bold text-yellow-800 dark:text-yellow-300">
-                    Ingredientes detectados
+                  {detectionType === 'visual' ? (
+                    <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                  )}
+                  <h4 className={`text-base font-bold ${
+                    detectionType === 'visual' 
+                      ? 'text-green-800 dark:text-green-300'
+                      : 'text-yellow-800 dark:text-yellow-300'
+                  }`}>
+                    {detectionType === 'visual' ? 'Ingredientes identificados visualmente' : 'Ingredientes detectados'}
                   </h4>
-                  <span className="ml-auto text-xs bg-yellow-200 dark:bg-yellow-800/50 text-yellow-700 dark:text-yellow-300 px-2.5 py-1 rounded-full font-semibold">
+                  <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-semibold ${
+                    detectionType === 'visual'
+                      ? 'bg-green-200 dark:bg-green-800/50 text-green-700 dark:text-green-300'
+                      : 'bg-yellow-200 dark:bg-yellow-800/50 text-yellow-700 dark:text-yellow-300'
+                  }`}>
                     {ingredientsFromImage.length} {ingredientsFromImage.length === 1 ? 'ingrediente' : 'ingredientes'}
                   </span>
                 </div>
 
-                <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-3">
-                  Revisa y edita los ingredientes antes de agregarlos a tu lista
+                {/* Mostrar confianza para detección visual */}
+                {detectionType === 'visual' && detectionConfidence != null && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-xs text-green-700 dark:text-green-400">
+                      <strong>Confianza de detección:</strong> {Math.round(detectionConfidence * 100)}%
+                      {detectionConfidence < 0.7 && ' (revisa cuidadosamente)'}
+                    </span>
+                  </div>
+                )}
+
+                <p className={`text-sm mb-3 ${
+                  detectionType === 'visual' 
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-yellow-700 dark:text-yellow-400'
+                }`}>
+                  {detectionType === 'visual' 
+                    ? 'Ingredientes identificados usando inteligencia artificial. Revisa y confirma antes de agregar.'
+                    : 'Revisa y edita los ingredientes antes de agregarlos a tu lista'
+                  }
                 </p>
 
                 <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-xl">
@@ -208,11 +256,19 @@ export default function IngredientForm({
                   />
                 </div>
 
-                <div className="flex gap-2 mt-4 pt-4 border-t border-yellow-200 dark:border-yellow-800">
+                <div className={`flex gap-2 mt-4 pt-4 ${
+                  detectionType === 'visual' 
+                    ? 'border-t border-green-200 dark:border-green-800'
+                    : 'border-t border-yellow-200 dark:border-yellow-800'
+                }`}>
                   <motion.button
                     type="button"
                     onClick={onSaveImageIngredients}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer ${
+                      detectionType === 'visual'
+                        ? 'bg-green-400 hover:bg-green-500 text-gray-800'
+                        : 'bg-yellow-400 hover:bg-yellow-500 text-gray-800'
+                    }`}
                     whileHover={{ scale: 1.007 }}
                     whileTap={{ scale: 0.98 }}
                   >

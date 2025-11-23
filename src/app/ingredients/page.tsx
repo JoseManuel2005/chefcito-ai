@@ -86,6 +86,14 @@ export default function IngredientsPage() {
   };
 
   /**
+   * Maneja la detección de ingredientes crudos desde análisis visual
+   * Procesa la lista y muestra chips editables
+   */
+  const handleRawIngredientsDetected = (detectedIngredients: string[], confidence: number) => {
+    imageProcessing.handleRawIngredientsDetection(detectedIngredients, confidence);
+  };
+
+  /**
    * Busca recetas combinando ingredientes manuales y de voz
    * Detiene audio TTS antes de buscar
    */
@@ -273,9 +281,13 @@ export default function IngredientsPage() {
                       showImageChips={imageProcessing.showImageChips}
                       ingredientsFromImage={imageProcessing.ingredientsFromImage}
                       setIngredientsFromImage={imageProcessing.setIngredientsFromImage}
+                      detectionConfidence={imageProcessing.detectionConfidence}
+                      detectionType={imageProcessing.detectionType}
                       onSaveImageIngredients={handleSaveImageIngredients}
                       onCancelImageIngredients={imageProcessing.cancelImageIngredients}
                       onImageProcessed={handleOCRText}
+                      onRawIngredientsDetected={handleRawIngredientsDetected}
+                      userPreferences={userPreferences}
                     />
                   </motion.div>
                 </div>
