@@ -97,10 +97,10 @@ export default function RecipeAnalysisPage() {
    */
   const confirmDishImage = async (file: File) => {
     if (!file) return;
-    
+
     setIsIdentifying(true);
     setPendingDishImage(file); // Actualizar estado para referencia
-    
+
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch("/api/identify-dish", {
@@ -109,7 +109,7 @@ export default function RecipeAnalysisPage() {
         body: JSON.stringify({ imageBase64: base64 }),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.dishName) {
         setDishNameFromImage(data.dishName);
         setConfidence(data.confidence ?? null);
@@ -266,9 +266,8 @@ export default function RecipeAnalysisPage() {
       const ttsText = `
         Receta: ${analysis.receta || "Sin nombre"}.
         Ingredientes: ${analysis.ingredientes?.join(", ") || "No especificados"}.
-        Preparación: ${
-          analysis.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(" ") ||
-          "No especificada"
+        Preparación: ${analysis.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(" ") ||
+        "No especificada"
         }.
       `
         .replace(/\s+/g, " ")
@@ -282,19 +281,24 @@ export default function RecipeAnalysisPage() {
    */
   const handleToggleFavorite = async () => {
     const nombre = analysis.receta || "Análisis de receta";
+    const ingredientes = (analysis.ingredientes || []) as string[];
     const data = {
       nombre,
-      ingredientes: (analysis.ingredientes || []) as string[],
+      ingredientes,
       pasos: (analysis.pasos || []) as string[],
       tiempo: (analysis.tiempo || "") as string,
     };
-    const wasFav = isFavorite(nombre);
+    const wasFav = isFavorite(nombre, ingredientes);
     const ok = await toggleFavorite(data);
     if (!ok) {
       showError("Inicia sesión para guardar favoritos", 4000);
       return;
     }
-    showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+    if (wasFav) {
+      showError("Eliminado de favoritos");
+    } else {
+      showSuccess("Agregado a favoritos");
+    }
   };
 
   // Pantalla de carga
@@ -302,9 +306,8 @@ export default function RecipeAnalysisPage() {
     return (
       <main
         ref={mainRef}
-        className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${
-          theme === "dark" ? "dark bg-gray-950" : "bg-white"
-        }`}
+        className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${theme === "dark" ? "dark bg-gray-950" : "bg-white"
+          }`}
       >
         <ParticleBackground theme={theme} />
         <div className="relative z-10 flex flex-col min-h-screen">
@@ -330,9 +333,8 @@ export default function RecipeAnalysisPage() {
   return (
     <main
       ref={mainRef}
-      className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${
-        theme === "dark" ? "dark bg-gray-950" : "bg-white"
-      }`}
+      className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${theme === "dark" ? "dark bg-gray-950" : "bg-white"
+        }`}
     >
       {/* Canvas de partículas */}
       <ParticleBackground theme={theme} dependencies={[analysis, hasSearched]} />
@@ -372,20 +374,18 @@ export default function RecipeAnalysisPage() {
 
             {/* Grid de formulario y análisis */}
             <div
-              className={`${
-                hasSearched
+              className={`${hasSearched
                   ? isMobile
                     ? "flex flex-col space-y-8"
                     : "grid grid-cols-2 gap-10 items-start"
                   : "flex justify-center"
-              }`}
+                }`}
             >
               {/* Columna izquierda: Formulario */}
               <motion.div
                 layout
-                className={`${
-                  hasSearched ? (isMobile ? "w-full" : "sticky top-6") : "w-full max-w-3xl"
-                }`}
+                className={`${hasSearched ? (isMobile ? "w-full" : "sticky top-6") : "w-full max-w-3xl"
+                  }`}
                 initial={false}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
@@ -432,10 +432,10 @@ export default function RecipeAnalysisPage() {
                               <BookOpen className="w-7 h-7 md:w-8 md:h-8 text-green-300 animate-bounce" />
                             </div>
                           </div>
-                          <motion.p 
-                            className="text-gray-700 dark:text-gray-300 font-medium text-sm md:text-base" 
-                            initial={{ opacity: 0 }} 
-                            animate={{ opacity: 1 }} 
+                          <motion.p
+                            className="text-gray-700 dark:text-gray-300 font-medium text-sm md:text-base"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             transition={{ delay: 0.2 }}
                           >
                             Analizando plato...
@@ -453,7 +453,7 @@ export default function RecipeAnalysisPage() {
                         setMenuOpen={setMenuOpen}
                         ttsStatus={tts.status}
                         onTTSAction={handleTTSAction}
-                        isFavorite={isFavorite(analysis.receta || "Análisis de receta")}
+                        isFavorite={isFavorite(analysis.receta || "Análisis de receta", analysis.ingredientes || [])}
                         onToggleFavorite={handleToggleFavorite}
                         showSuccess={showSuccess}
                         showError={showError}

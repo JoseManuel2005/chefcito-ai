@@ -25,7 +25,7 @@ interface RecipeListProps {
   ttsPause: () => void;
   ttsResume: () => void;
   ttsStop: () => void;
-  isFavorite: (name: string) => boolean;
+  isFavorite: (name: string, ingredientes?: string[]) => boolean;
   toggleFavorite: (recipe: any) => Promise<boolean>;
   showSuccess: (msg: string, duration?: number) => void;
   showError: (msg: string, duration?: number) => void;
@@ -138,7 +138,8 @@ export default function RecipeList({
         `.replace(/\s+/g, ' ').trim();
 
         const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
-        const isFav = isFavorite(nombreReceta);
+        const ingredientesReceta = (recipeItem.ingredientes || []) as string[];
+        const isFav = isFavorite(nombreReceta, ingredientesReceta);
 
         return (
           <RecipeCard
@@ -150,7 +151,7 @@ export default function RecipeList({
             onToggleFavorite={async () => {
               const data = {
                 nombre: nombreReceta,
-                ingredientes: (recipeItem.ingredientes || []) as string[],
+                ingredientes: ingredientesReceta,
                 pasos: (recipeItem.pasos || []) as string[],
                 tiempo: (recipeItem.tiempo || "") as string,
               };
@@ -160,7 +161,11 @@ export default function RecipeList({
                 showError("Inicia sesión para guardar favoritos", 4000);
                 return;
               }
-              showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+              if (wasFav) {
+                showError("Eliminado de favoritos");
+              } else {
+                showSuccess("Agregado a favoritos");
+              }
             }}
             currentTTSIndex={currentTTSIndex}
             ttsStatus={ttsStatus}
