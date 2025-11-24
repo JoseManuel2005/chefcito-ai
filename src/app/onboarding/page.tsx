@@ -28,6 +28,7 @@ import {
   Sun
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import ParticleBackground from "@/components/ParticleBackground";
 
 export default function OnboardingPage() {
   const [allergies, setAllergies] = useState<string[]>([""]);
@@ -192,7 +193,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-950 transition-colors duration-500 overflow-hidden">
+    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-950 transition-colors duration-500 overflow-hidden relative">
+      <ParticleBackground theme={theme} dependencies={[loading]} />
       <div className="w-full max-w-md relative">
         {/* Fondo suave estilo partículas o glow (opcional si usas ParticleBackground global) */}
         {/* <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-100/30 via-transparent to-yellow-50/20 dark:from-amber-900/10 dark:to-yellow-900/5 blur-3xl rounded-[3rem]" /> */}
