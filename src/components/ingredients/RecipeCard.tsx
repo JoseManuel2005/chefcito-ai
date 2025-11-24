@@ -292,7 +292,10 @@ export default function RecipeCard({
       
             {/* Botón cerrar */}
             <button
-              onClick={() => setShowVideoModal(false)}
+              onClick={() => {
+                URL.revokeObjectURL(videoUrl);
+                setShowVideoModal(false);
+              }}
               aria-label="Cerrar video"
               className="absolute right-3 top-3 w-7 h-7 flex items-center justify-center rounded-full 
                          bg-black/70 text-white text-sm hover:bg-black/90 transition shadow-lg z-20"
@@ -306,15 +309,30 @@ export default function RecipeCard({
               controls
               autoPlay
               className="w-full h-auto max-h-[320px]"
-              onEnded={() => URL.revokeObjectURL(videoUrl)}
+              onEnded={() => {}}
             />
 
             {/* Botón descargar */}
             <a
               href={videoUrl}
               download={`${nombreReceta.replace(/\s+/g, "_")}.mp4`}
-              className="block w-full text-center py-2 text-green-400 hover:text-green-300 text-sm bg-gray-800"
+              className="flex items-center justify-center gap-2 w-full py-2 text-sm font-medium
+                         text-gray-700 dark:text-gray-200
+                         bg-white/60 dark:bg-gray-900/40
+                         backdrop-blur border-t border-gray-300/40 dark:border-gray-700/60
+                         hover:bg-white/70 dark:hover:bg-gray-900/50
+                         transition-all"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+              </svg>
               Descargar video
             </a>
           </div>
