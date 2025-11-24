@@ -182,36 +182,38 @@ export async function POST(req: Request) {
         : others;
 
       // === Prompt final para generación de recetas ===
-      const prompt = `Eres un chef experto comprometido con la seguridad alimentaria, la reducción del desperdicio y la cocina latinoamericana auténtica.
-          
-      Sigue estas reglas estrictamente:
-      - ${allergies.length > 0 ? `NUNCA uses, sugieras ni menciones ninguno de estos alérgenos: ${allergies.join(", ")}.` : "No hay alergias reportadas."}
-      - ${preferredCuisines.length > 0 ? `Prioriza recetas inspiradas en: ${preferredCuisines.join(", ")}.` : "Sin preferencias culinarias específicas."}
-      - ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí (ej. en Colombia: bandeja paisa, ajiaco, sancocho).` : "Ubicación no especificada."}
-          
-      ANTES DE GENERAR RECETAS:
-      1. Filtra los ingredientes y conserva SOLO aquellos que sean comestibles, reales y seguros (ignora "piedra", "papel", etc.).
-      2. Prioriza SIEMPRE los ingredientes que vencen HOY o en los próximos 2 días.
-      3. Si solo tienes un ingrediente útil, genera una receta simple pero realista (ej. "huevo frito", "plátano asado").
-          
-      Ingredientes disponibles:
-      - 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
-      - ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
-          
-      Genera hasta 2 recetas **realistas y específicas**, usando SOLO los ingredientes disponibles.
-      - Incluye platos tradicionales si los ingredientes lo permiten (ej. si tienes arroz, frijoles y carne → "bandeja paisa").
-      - Estima tiempos REALISTAS (ej: "30-40 minutos", no "5 minutos").
-      - Si no es posible crear recetas útiles, devuelve [].
-          
-      Devuelve SOLO un JSON en este formato exacto:
-      [
-        {
-          "nombre": "Nombre de la receta",
-          "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
-          "pasos": ["Paso 1", "Paso 2", ...],
-          "tiempo": "30-40 minutos"
-        }
-      ]`;
+      const prompt = `Eres un chef experto comprometido con la seguridad alimentaria y la reducción del desperdicio.
+Sigue estas reglas estrictamente:
+- ${allergies.length > 0 ? `NUNCA uses, sugieras ni menciones ninguno de estos alérgenos: ${allergies.join(", ")}.` : "No hay alergias reportadas."}
+- ${preferredCuisines.length > 0 ? `Prioriza recetas inspiradas en: ${preferredCuisines.join(", ")}.` : "Sin preferencias culinarias específicas."}
+- ${country ? `El usuario está en ${country}. Usa ingredientes accesibles y platos tradicionales o populares allí.` : "Ubicación no especificada."}
+
+ANTES DE GENERAR RECETAS:
+1. Filtra los ingredientes y conserva SOLO aquellos que sean comestibles, reales y seguros para consumo humano.
+2. Ignora completamente ingredientes no comestibles como: piedra, lapiz, plastico, metal, papel, noingrediente, etc.
+3. Si después del filtrado no quedan ingredientes válidos, devuelve un array vacío [].
+4. Si por ejemplo introduce "piedra" y luego "pollo" (ingrediente real), olvida "piedra" y usa los ingredientes que si son comestibles.
+
+Ingredientes disponibles para usar (todos están en buen estado):
+- 🚨 Ingredientes que vencen HOY o en los próximos 2 días (¡usa estos primero!): ${safeExpiringSoon.length > 0 ? safeExpiringSoon.join(", ") : "Ninguno"}
+- ✅ Otros ingredientes frescos: ${safeOthers.length > 0 ? safeOthers.join(", ") : "Ninguno"}
+
+Genera hasta 2 recetas cortas, realistas, seguras y deliciosas usando SOLO los ingredientes disponibles.
+Puedes usar solo un ingrediente si es necesario.
+Cada receta debe tener **entre 4 y 6 pasos**, secuenciales y prácticos.
+Los pasos deben ser **claros, detallados y realistas** (ej: "Pica la cebolla en juliana fina", no "Prepara los ingredientes").
+Para cada receta, estima un tiempo de preparación REALISTA en minutos (ej: "15-20 minutos", "45-60 minutos").
+Si no es posible crear recetas útiles, devuelve un array vacío [].
+
+Devuelve SOLO un JSON en este formato exacto (sin texto adicional, sin markdown):
+[
+  {
+    "nombre": "Nombre de la receta",
+    "ingredientes": ["Ingrediente 1", "Ingrediente 2", ...],
+    "pasos": ["Paso 1", "Paso 2", ...],
+    "tiempo": "25-30 minutos"
+  }
+]`;
 
       // Llamada a OpenAI para generar recetas.
       const completion = await openai.chat.completions.create({
