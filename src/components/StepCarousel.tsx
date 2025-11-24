@@ -16,8 +16,8 @@ export default function StepCarousel({ steps, images }: StepCarouselProps) {
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const scrollPrev = () => emblaApi && emblaApi.scrollPrev();
-  const scrollNext = () => emblaApi && emblaApi.scrollNext();
+  const scrollPrev = () => emblaApi?.scrollPrev();
+  const scrollNext = () => emblaApi?.scrollNext();
 
   const onSelect = () => {
     if (!emblaApi) return;
@@ -34,24 +34,25 @@ export default function StepCarousel({ steps, images }: StepCarouselProps) {
   }, [emblaApi]);
 
   return (
-    <div className="relative">
+    <div className="relative rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900 p-4">
       <div className="overflow-hidden rounded-xl" ref={emblaRef}>
         <div className="flex">
           {steps.map((paso, i) => (
             <div key={i} className="flex-[0_0_100%] min-w-0 px-2">
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-center h-full flex flex-col items-center">
+              <div className="text-center py-4 h-full flex flex-col items-center">
                 {images[i] ? (
                   <img
                     src={`data:image/png;base64,${images[i]}`}
-                    alt={`Paso ${i + 1}`}
-                    className="w-24 h-24 mx-auto object-contain rounded-lg border border-gray-200 dark:border-gray-700 mb-3"
+                    alt={`Paso ${i + 1}: ${paso}`}
+                    className="w-48 h-48 mx-auto object-contain rounded-xl border-2 border-amber-200 dark:border-amber-800/50 shadow-md"
+                    // 👇 NO usar onLoad para revoke, se hace en el hook
                   />
                 ) : (
-                  <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mb-3">
-                    <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">{i + 1}</span>
+                  <div className="w-48 h-48 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-4 border-2 border-dashed border-gray-300 dark:border-gray-700">
+                    <span className="text-4xl font-bold text-gray-400 dark:text-gray-600">{i + 1}</span>
                   </div>
                 )}
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">{paso}</p>
+                <p className="text-gray-800 dark:text-gray-200 font-medium text-base mt-2 px-2">{paso}</p>
               </div>
             </div>
           ))}
@@ -63,28 +64,28 @@ export default function StepCarousel({ steps, images }: StepCarouselProps) {
         type="button"
         onClick={scrollPrev}
         disabled={!prevBtnEnabled}
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md disabled:opacity-30 disabled:cursor-not-allowed"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 dark:border-gray-700"
         aria-label="Paso anterior"
       >
-        <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+        <ChevronLeft className="w-6 h-6 text-amber-600 dark:text-amber-400" />
       </button>
       <button
         type="button"
         onClick={scrollNext}
         disabled={!nextBtnEnabled}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md disabled:opacity-30 disabled:cursor-not-allowed"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2.5 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 dark:border-gray-700"
         aria-label="Paso siguiente"
       >
-        <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+        <ChevronRight className="w-6 h-6 text-amber-600 dark:text-amber-400" />
       </button>
 
       {/* Indicador de progreso */}
-      <div className="flex justify-center mt-3 space-x-1">
+      <div className="flex justify-center mt-4 space-x-2">
         {steps.map((_, i) => (
           <div
             key={i}
-            className={`w-2 h-2 rounded-full ${
-              i === selectedIndex ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'
+            className={`w-3 h-3 rounded-full ${
+              i === selectedIndex ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
             }`}
           />
         ))}

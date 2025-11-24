@@ -8,7 +8,12 @@ export const useStepVisualization = () => {
   const generateStepImage = useCallback(async (recipeId: string, steps: string[]) => {
     if (stepImages[recipeId] || loadingSteps[recipeId]) return;
 
-    const stepsToGenerate = steps; // 👈 Usa TODOS los pasos, no solo 2
+    const stepsToGenerate = steps.filter(step => step.trim() !== '');
+
+    if (stepsToGenerate.length === 0) {
+      setStepImages(prev => ({ ...prev, [recipeId]: [] }));
+      return;
+    }
 
     setLoadingSteps(prev => ({ ...prev, [recipeId]: true }));
 
@@ -16,25 +21,12 @@ export const useStepVisualization = () => {
       const images: string[] = [];
 
       for (const step of stepsToGenerate) {
-        if (!step.trim()) {
-          images.push('');
-          continue;
-        }
-
-		const prompt = `
-		Ilustración clara y didáctica del paso: "${step}".
-		- Estilo: infografía animada estilo manual de cocina, limpia y educativa.
-		- Debe mostrar claramente **la acción principal** (ej. "cortar", "mezclar", "hornear") y los **ingredientes/herramientas involucrados**.
-		- Fondo blanco, sin texto, sin sombras complejas.
-		- Enfoque en claridad: que se entienda la acción incluso en tamaño pequeño.
-		- Formato cuadrado 1:1.
-		`;
-		
         const res = await fetch('/api/generate-step-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ stepText: step }),
         });
+
         const data = await res.json();
         images.push(data.imageBase64 || '');
       }

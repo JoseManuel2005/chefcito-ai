@@ -10,36 +10,43 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
+    const { stepText } = await req.json(); // 👈 Cambiado de 'prompt' a 'stepText'
 
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt requerido' }, { status: 400 });
+    if (!stepText) {
+      return NextResponse.json({ error: 'Texto del paso requerido' }, { status: 400 });
     }
 
+    // ✅ Prompt optimizado: ilustración didáctica, estilo manual de cocina
+    const prompt = `
+Crea una ilustración didáctica y clara del siguiente paso de receta:
+"${stepText}"
+
+Requisitos:
+- Estilo: ilustración tipo manual de cocina profesional, limpia y funcional.
+- Muestra claramente la **acción principal** (cortar, mezclar, hornear) y los **ingredientes/herramientas** involucrados.
+- Fondo blanco, sin texto, sin sombras complejas.
+- Composición centrada, enfoque en la acción.
+- Formato cuadrado (1:1).
+- Evita elementos decorativos innecesarios.
+`;
+
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: prompt,
-      config: {
-        responseModalities: ['IMAGE'],
-        imageConfig: { aspectRatio: '1:1' },
-      },
+      model: 'gemini-2.5-flash-image-preview', // 👈 Usa -preview para mejor calidad
+      contents: [{ text: prompt }], // 👈 Formato correcto para REST
     });
 
     const parts: any[] =
-      // @ts-expect-error - response typings don't include 'parts' for image modality responses
-      response.parts ??
-      response.candidates?.[0]?.content?.parts ??
-      [];
+      response.candidates?.[0]?.content?.parts ?? [];
 
-    const imagePart = parts.find((p) => p.inlineData?.data);
+    const imagePart = parts.find((p: any) => p.inlineData?.data);
     if (!imagePart) {
-      return NextResponse.json({ error: 'No se generó imagen' }, { status: 500 });
+      return NextResponse.json({ error: 'No se generó imagen válida' }, { status: 500 });
     }
 
     const imageBase64 = imagePart.inlineData.data as string;
     return NextResponse.json({ imageBase64 });
   } catch (error: any) {
     console.error('[STEP IMAGE ERROR]', error);
-    return NextResponse.json({ error: 'Error al generar mini-ilustración' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al generar ilustración del paso' }, { status: 500 });
   }
 }

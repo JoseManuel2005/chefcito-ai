@@ -200,6 +200,8 @@ Ingredientes disponibles para usar (todos están en buen estado):
 
 Genera hasta 2 recetas cortas, realistas, seguras y deliciosas usando SOLO los ingredientes disponibles.
 Puedes usar solo un ingrediente si es necesario.
+Cada receta debe tener **entre 4 y 6 pasos**, secuenciales y prácticos.
+Los pasos deben ser **claros, detallados y realistas** (ej: "Pica la cebolla en juliana fina", no "Prepara los ingredientes").
 Para cada receta, estima un tiempo de preparación REALISTA en minutos (ej: "15-20 minutos", "45-60 minutos").
 Si no es posible crear recetas útiles, devuelve un array vacío [].
 
