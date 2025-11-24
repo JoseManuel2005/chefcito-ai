@@ -20,13 +20,21 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-      Fotografía profesional de un plato de comida llamado "${recipeName}".
-      Ingredientes visibles: ${ingredients.join(', ')}.
-      Estilo: imagen fotorrealista de alta calidad, iluminación cálida de estudio,
-      fondo desenfocado (bokeh), enfoque nítido en el plato.
-      Presentación: servido en plato blanco de cerámica, bien emplatado, sin texto ni logotipos.
-      Formato cuadrado tipo 1:1, estilo fotográfico de revista gastronómica.
-    `.trim();
+      Fotografía fotorrealista de alta calidad de un plato de comida llamado "${recipeName}".
+      Ingredientes visibles y reconocibles: ${ingredients.join(', ')}.
+        
+      Contexto:
+      - Tipo de plato: ${recipeName.toLowerCase().includes('postre') ? 'postre' : recipeName.toLowerCase().includes('sopa') ? 'sopa' : 'plato principal'}
+      - Estilo: comida casera auténtica, no estilizada ni de restaurante de lujo.
+      - Presentación: servido en un plato blanco o de cerámica neutra, centrado, sin cubiertos ni manos visibles.
+      - Fondo: desenfocado (bokeh suave), textura de madera clara o lienzo neutro.
+      - Iluminación: luz natural cálida, sin sombras duras.
+      - Calidad: 4K, enfoque nítido en los ingredientes, colores vibrantes pero realistas.
+      - Formato: cuadrado (1:1), listo para publicar en redes sociales.
+      - Prohibido: texto, logotipos, personas, cubiertos, servilletas, o cualquier elemento que no sea la comida.
+        
+      Importante: refleja fielmente los ingredientes listados. Si es "bandeja paisa", debe incluir arroz, frijoles, carne, chicharrón, plátano, huevo y aguacate.
+      `;
 
     // Llamada a Nano Banana (Gemini 2.5 Flash Image)
     const response = await ai.models.generateContent({

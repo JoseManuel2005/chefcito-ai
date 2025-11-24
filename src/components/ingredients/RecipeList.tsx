@@ -25,7 +25,7 @@ interface RecipeListProps {
   ttsPause: () => void;
   ttsResume: () => void;
   ttsStop: () => void;
-  isFavorite: (name: string) => boolean;
+  isFavorite: (name: string, ingredientes?: string[]) => boolean;
   toggleFavorite: (recipe: any) => Promise<boolean>;
   showSuccess: (msg: string, duration?: number) => void;
   showError: (msg: string, duration?: number) => void;
