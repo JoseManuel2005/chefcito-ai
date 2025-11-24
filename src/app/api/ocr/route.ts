@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleAuth } from 'google-auth-library';
 
-export const runtime = 'nodejs'; // necesario para usar google-auth-library
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     const base64Image = buffer.toString('base64');
 
-    // 🔑 Obtener credenciales desde variable de entorno (base64)
+    // Obtener credenciales desde variable de entorno (base64)
     const credentialsBase64 = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
     if (!credentialsBase64) {
       return NextResponse.json(
