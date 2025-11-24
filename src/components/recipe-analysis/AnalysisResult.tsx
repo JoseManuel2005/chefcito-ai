@@ -129,13 +129,15 @@ export default function AnalysisResult({
                 onClick={onToggleFavorite}
                 className={`p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-green-50 dark:hover:bg-green-900/20`}
                 aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+
+
               >
                 <Heart
-                  className={`w-5 h-5 transition-colors ${
-                    isFavorite
-                      ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
-                      : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
-                  }`}
+                  className={`w-5 h-5 transition-colors ${isFavorite
+
+                    ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
+                    : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+                    }`}
                 />
               </button>
             </div>
