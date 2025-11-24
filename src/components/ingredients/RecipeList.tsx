@@ -171,6 +171,7 @@ export default function RecipeList({
                   showError
                 );
               }}
+              stepImages={stepImages[index] || []}
             />
 
             {/* Botón de guía visual */}

@@ -1,13 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChefHat, Clock, Volume2, Pause, Heart, Share2, ImageIcon, Eye } from "lucide-react";
+import { ChefHat, Clock, Volume2, Pause, Heart, Share2, ImageIcon, Eye, Play } from "lucide-react";
 import ShareMenu from "@/components/ShareMenu";
+import { useRecipeVideo } from "@/hooks/useRecipeVideo";
 import type { Recipe } from "@/hooks/useRecipeSearch";
 
-/**
- * Props del componente RecipeCard
- */
 interface RecipeCardProps {
   recipe: Recipe;
   index: number;
@@ -26,31 +25,10 @@ interface RecipeCardProps {
   showDishImage: boolean;
   loadingDishImage: boolean;
   onGenerateImage: () => void;
+  // 👇 Nuevas props para video
+  stepImages?: string[];
 }
 
-/**
- * Tarjeta de receta individual con todas sus funcionalidades
- * 
- * Características:
- * - Visualización de nombre, tiempo, ingredientes y pasos
- * - Audio TTS para leer la receta en voz alta
- * - Menú de compartir (texto, copiar, imagen)
- * - Botón de favoritos con persistencia
- * - Generación de imagen del plato con IA
- * - Animaciones suaves y responsive
- * 
- * @component
- * @example
- * ```tsx
- * <RecipeCard
- *   recipe={recipe}
- *   index={0}
- *   isFavorite={true}
- *   onToggleFavorite={() => {}}
- *   onTTSClick={() => {}}
- * />
- * ```
- */
 export default function RecipeCard({
   recipe,
   index,
@@ -69,8 +47,34 @@ export default function RecipeCard({
   showDishImage,
   loadingDishImage,
   onGenerateImage,
+  stepImages = [],
 }: RecipeCardProps) {
   const nombreReceta = recipe.nombre || `Receta ${index + 1}`;
+  
+  // 👇 Hook de video
+  const { isGenerating, videoUrl, generateVideo } = useRecipeVideo();
+  const [showVideoModal, setShowVideoModal] = useState(false);
+
+  // 👇 Función para generar video
+  const estimateDurationSeconds = (text: string): number => {
+    const words = text.trim().split(/\s+/).length;
+    return Math.max(8, Math.min(45, words / 2.5)); // Entre 8s y 45s
+  };
+  
+  const handleGenerateVideo = async () => {
+    const ttsText = `Receta: ${nombreReceta}. ${recipe.pasos?.join('. ') || ''}`;
+    const estimatedDuration = estimateDurationSeconds(ttsText);
+    
+    const audioRes = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: ttsText }),
+    });
+    const audioUrl = URL.createObjectURL(await audioRes.blob());
+  
+    await generateVideo(stepImages, audioUrl, nombreReceta, estimatedDuration);
+    setShowVideoModal(true);
+  };
 
   return (
     <motion.div
@@ -98,7 +102,7 @@ export default function RecipeCard({
               {nombreReceta}
             </h4>
 
-            {/* Botonera: Audio / Menú / Favorito / Imagen */}
+            {/* Botonera: Audio / Menú / Favorito / Imagen / Video */}
             <div className="flex items-center gap-1">
               {/* Menú compartir */}
               <div className="relative" id={`menu-${index}`}>
@@ -158,6 +162,25 @@ export default function RecipeCard({
                   <ImageIcon className="w-5 h-5" />
                 )}
               </motion.button>
+
+              {/* Video de preparación (solo si hay pasos e imágenes) */}
+              {stepImages.length > 0 && (
+                <motion.button
+                  type="button"
+                  onClick={handleGenerateVideo}
+                  disabled={isGenerating}
+                  className="p-1.5 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Ver video de preparación"
+                >
+                  {isGenerating ? (
+                    <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Play className="w-5 h-5" />
+                  )}
+                </motion.button>
+              )}
 
               {/* Favorito */}
               <motion.button
@@ -261,6 +284,42 @@ export default function RecipeCard({
         </motion.div>
       )}
       </div>
+
+      {/* Modal de video */}
+      {showVideoModal && videoUrl && (
+        <div className="mt-6 flex justify-center">
+          <div className="relative w-full max-w-md bg-gray-900 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl">
+      
+            {/* Botón cerrar */}
+            <button
+              onClick={() => setShowVideoModal(false)}
+              aria-label="Cerrar video"
+              className="absolute right-3 top-3 w-7 h-7 flex items-center justify-center rounded-full 
+                         bg-black/70 text-white text-sm hover:bg-black/90 transition shadow-lg z-20"
+            >
+              ✕
+            </button>
+      
+            {/* Video */}
+            <video
+              src={videoUrl}
+              controls
+              autoPlay
+              className="w-full h-auto max-h-[320px]"
+              onEnded={() => URL.revokeObjectURL(videoUrl)}
+            />
+
+            {/* Botón descargar */}
+            <a
+              href={videoUrl}
+              download={`${nombreReceta.replace(/\s+/g, "_")}.mp4`}
+              className="block w-full text-center py-2 text-green-400 hover:text-green-300 text-sm bg-gray-800"
+            >
+              Descargar video
+            </a>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
