@@ -188,7 +188,12 @@ export default function RecipeList({
                     }
                   }
                 }}
-                className="px-4 py-1.5 text-sm bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-800/50 rounded font-medium transition-colors"
+                className="px-4 py-2 text-sm rounded-xl font-medium 
+                  bg-white/70 text-gray-800 shadow-sm 
+                  hover:bg-white dark:hover:bg-gray-800 
+                  dark:bg-gray-900/40 dark:text-gray-200 
+                  backdrop-blur border border-gray-300/40 
+                  dark:border-gray-700/60 transition-all"
               >
                 {isExpanded ? 'Ocultar guía visual' : 'Ver guía visual'}
               </button>
