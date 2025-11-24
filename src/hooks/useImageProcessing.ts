@@ -5,6 +5,7 @@ import { useState } from 'react';
  * 
  * Proporciona funcionalidades para:
  * - OCR: Detectar ingredientes desde imágenes de recetas/despensas
+ * - Detección visual: Identificar ingredientes crudos usando IA visual
  * - Generación de imágenes: Crear visualizaciones de platos terminados
  * - Manejo de estados de carga y resultados
  * 
@@ -12,18 +13,25 @@ import { useState } from 'react';
  * ```tsx
  * const imageProcessing = useImageProcessing();
  * 
- * // Procesar imagen con OCR
+ * // Procesar imagen con OCR (recetas escritas)
  * await imageProcessing.processOCRText(rawText, preferences, onError);
+ * 
+ * // Procesar ingredientes crudos visualmente
+ * imageProcessing.handleRawIngredientsDetection(ingredients, confidence);
  * 
  * // Generar imagen de un plato
  * await imageProcessing.generateDishImage(id, name, ingredients, onError);
  * ```
  */
 export const useImageProcessing = () => {
-  /** Ingredientes detectados desde la imagen (OCR) */
+  /** Ingredientes detectados desde la imagen (OCR o visual) */
   const [ingredientsFromImage, setIngredientsFromImage] = useState<string[]>([]);
   /** Muestra/oculta chips editables de ingredientes detectados */
   const [showImageChips, setShowImageChips] = useState(false);
+  /** Nivel de confianza de la detección de ingredientes (0-1) */
+  const [detectionConfidence, setDetectionConfidence] = useState<number | null>(null);
+  /** Tipo de detección utilizada: 'ocr' | 'visual' */
+  const [detectionType, setDetectionType] = useState<'ocr' | 'visual' | null>(null);
   /** Imágenes generadas de platos (key: recipeId, value: base64) */
   const [dishImages, setDishImages] = useState<Record<string, string>>({});
   /** Control de visibilidad de imágenes de platos */
@@ -66,6 +74,8 @@ export const useImageProcessing = () => {
       }
 
       setIngredientsFromImage(data.ingredients);
+      setDetectionType('ocr');
+      setDetectionConfidence(0.8); // OCR tiene alta confianza si encuentra texto
       setShowImageChips(true);
     } catch (err: any) {
       console.error(err);
@@ -73,9 +83,24 @@ export const useImageProcessing = () => {
     }
   };
 
+  /**
+   * Maneja la detección de ingredientes crudos desde análisis visual con IA
+   * 
+   * @param ingredients - Lista de ingredientes detectados
+   * @param confidence - Nivel de confianza de la detección (0-1)
+   */
+  const handleRawIngredientsDetection = (ingredients: string[], confidence: number) => {
+    setIngredientsFromImage(ingredients);
+    setDetectionType('visual');
+    setDetectionConfidence(confidence);
+    setShowImageChips(true);
+  };
+
   const cancelImageIngredients = () => {
     setShowImageChips(false);
     setIngredientsFromImage([]);
+    setDetectionType(null);
+    setDetectionConfidence(null);
   };
 
   /**
@@ -128,13 +153,18 @@ export const useImageProcessing = () => {
     setLoadingDishImage({});
     setIngredientsFromImage([]);
     setShowImageChips(false);
+    setDetectionType(null);
+    setDetectionConfidence(null);
   };
 
   return {
     ingredientsFromImage,
     setIngredientsFromImage,
     showImageChips,
+    detectionConfidence,
+    detectionType,
     processOCRText,
+    handleRawIngredientsDetection,
     cancelImageIngredients,
     dishImages,
     showDishImage,
