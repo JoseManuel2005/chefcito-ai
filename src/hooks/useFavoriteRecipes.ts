@@ -26,7 +26,7 @@ export interface UseFavoriteRecipesReturn {
   addFavorite: (recipe: Omit<FavoriteRecipe, 'id' | 'createdAt'>) => Promise<boolean>;
   removeFavorite: (recipeId: string) => Promise<boolean>;
   toggleFavorite: (recipe: Omit<FavoriteRecipe, 'id' | 'createdAt'>) => Promise<boolean>;
-  isFavorite: (recipeName: string) => boolean;
+  isFavorite: (recipeName: string, ingredientes?: string[]) => boolean;
   refreshFavorites: () => Promise<void>;
 }
 
@@ -185,32 +185,74 @@ export function useFavoriteRecipes(): UseFavoriteRecipesReturn {
 
   /**
    * Alterna el estado de favorito de una receta
-   * Si existe, la elimina. Si no existe, la agrega.
+   * Si existe una receta idéntica (nombre + ingredientes), no hace nada y retorna true
+   * Si no existe, la agrega permitiendo múltiples versiones con nombres iguales pero ingredientes diferentes
    */
   const toggleFavorite = useCallback(async (
     recipe: Omit<FavoriteRecipe, 'id' | 'createdAt'>
   ): Promise<boolean> => {
-    // Buscar si la receta ya existe en favoritos por nombre
-    const existingFavorite = Array.from(favorites.values()).find(
-      fav => fav.nombre.toLowerCase() === recipe.nombre.toLowerCase()
-    );
+    // Verificar si ya existe esta receta específica (nombre + ingredientes)
+    const normalizeIngredient = (ing: string) => ing.toLowerCase().trim();
+    const normalizedSearchIngredients = recipe.ingredientes.map(normalizeIngredient).sort();
+    
+    const existingFavorite = Array.from(favorites.values()).find(fav => {
+      if (fav.nombre.toLowerCase() !== recipe.nombre.toLowerCase()) {
+        return false;
+      }
+      
+      const normalizedFavIngredients = fav.ingredientes.map(normalizeIngredient).sort();
+      
+      if (normalizedFavIngredients.length !== normalizedSearchIngredients.length) {
+        return false;
+      }
+      
+      return normalizedFavIngredients.every((ing, index) => 
+        ing === normalizedSearchIngredients[index]
+      );
+    });
 
     if (existingFavorite) {
-      // Si existe, eliminarla
+      // Si ya existe esta receta específica, la eliminamos
       return await removeFavorite(existingFavorite.id);
-    } else {
-      // Si no existe, agregarla
-      return await addFavorite(recipe);
     }
+    
+    // Si no existe, la agregamos
+    return await addFavorite(recipe);
   }, [favorites, addFavorite, removeFavorite]);
 
   /**
-   * Verifica si una receta está en favoritos por su nombre
+   * Verifica si una receta está en favoritos
+   * Si se proporcionan ingredientes, compara nombre + ingredientes
+   * Si no, solo compara por nombre (retorna true si existe alguna versión)
    */
-  const isFavorite = useCallback((recipeName: string): boolean => {
-    return Array.from(favorites.values()).some(
-      fav => fav.nombre.toLowerCase() === recipeName.toLowerCase()
-    );
+  const isFavorite = useCallback((recipeName: string, ingredientes?: string[]): boolean => {
+    if (!ingredientes || ingredientes.length === 0) {
+      // Solo verificar por nombre
+      return Array.from(favorites.values()).some(
+        fav => fav.nombre.toLowerCase() === recipeName.toLowerCase()
+      );
+    }
+    
+    // Verificar por nombre + ingredientes
+    const normalizeIngredient = (ing: string) => ing.toLowerCase().trim();
+    const normalizedSearchIngredients = ingredientes.map(normalizeIngredient).sort();
+    
+    return Array.from(favorites.values()).some(fav => {
+      if (fav.nombre.toLowerCase() !== recipeName.toLowerCase()) {
+        return false;
+      }
+      
+      const normalizedFavIngredients = fav.ingredientes.map(normalizeIngredient).sort();
+      
+      // Comparar si tienen los mismos ingredientes
+      if (normalizedFavIngredients.length !== normalizedSearchIngredients.length) {
+        return false;
+      }
+      
+      return normalizedFavIngredients.every((ing, index) => 
+        ing === normalizedSearchIngredients[index]
+      );
+    });
   }, [favorites]);
 
   return {

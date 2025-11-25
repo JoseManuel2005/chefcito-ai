@@ -6,6 +6,7 @@ import { ChefHat, User, Menu, X, Settings, LogOut, Sun, Moon, BookOpen, Heart } 
 import { auth } from "@/lib/firebaseClient";
 import { useTheme } from "@/contexts/ThemeContext";
 import UserGuide from "@/components/UserGuide";
+import Tooltip from "./Tooltip";
 
 interface NavbarProps {
   userPhoto?: string | null;
@@ -90,39 +91,43 @@ export default function Navbar({ userPhoto }: NavbarProps) {
               </div>
 
               {/* Toggle de tema */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
-                aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
-              >
-                {theme === 'light' ? (
-                  <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
+              <Tooltip content={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'} colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-lg transition-all duration-200 cursor-pointer group hover:scale-110"
+                  aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
+                >
+                  {theme === 'light' ? (
+                    <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform duration-300" />
+                  ) : (
+                    <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-180 transition-transform duration-500" />
+                  )}
+                </button>
+              </Tooltip>
 
               {/* User Menu */}
               <div className="relative" ref={userMenuRef}>
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-3 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors duration-200 cursor-pointer"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
-                    {userPhoto ? (
-                      <img
-                        src={userPhoto}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white">
-                        <User className="w-4 h-4" />
-                      </div>
-                    )}
-                  </div>
-                </button>
+                <Tooltip content="Mi cuenta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center gap-3 p-1 rounded-lg transition-all duration-200 cursor-pointer hover:scale-110"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
+                      {userPhoto ? (
+                        <img
+                          src={userPhoto}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </Tooltip>
 
                 {/* User Dropdown Menu */}
                 {isUserMenuOpen && (
@@ -170,7 +175,7 @@ export default function Navbar({ userPhoto }: NavbarProps) {
               {/* Toggle de tema para móvil */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 cursor-pointer"
+                className="p-2 rounded-lg transition-colors duration-200 cursor-pointer"
                 aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
               >
                 {theme === 'light' ? (
@@ -272,9 +277,9 @@ export default function Navbar({ userPhoto }: NavbarProps) {
       </nav>
 
       {/* Componente Manual de Usuario */}
-      <UserGuide 
-        isOpen={isManualOpen} 
-        onClose={() => setIsManualOpen(false)} 
+      <UserGuide
+        isOpen={isManualOpen}
+        onClose={() => setIsManualOpen(false)}
       />
     </>
   );

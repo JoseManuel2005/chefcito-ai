@@ -42,7 +42,63 @@ export default function RootLayout({
           <Toaster 
             position="top-center"
             toastOptions={{
-              className: 'dark:bg-gray-800 dark:text-white',
+              // Estilos generales
+              duration: 4000,
+              style: {
+                background: '#ffd700',
+                color: '#fff',
+                padding: '16px 24px',
+                borderRadius: '20px',
+                fontSize: '15px',
+                fontWeight: '600',
+                boxShadow: '0 20px 60px rgba(255, 215, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.12)',
+                maxWidth: '500px',
+                textAlign: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+              },
+              // Estilos para success
+              success: {
+                duration: 4000,
+                style: {
+                  background: '#ffd700',
+                  color: '#fff',
+                  boxShadow: '0 20px 60px rgba(255, 215, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.12)',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                },
+                iconTheme: {
+                  primary: '#fff',
+                  secondary: '#ffd700',
+                },
+              },
+              // Estilos para error
+              error: {
+                duration: 5000,
+                style: {
+                  background: '#ffd700',
+                  color: '#fff',
+                  boxShadow: '0 20px 60px rgba(255, 215, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.12)',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                },
+                iconTheme: {
+                  primary: '#fff',
+                  secondary: '#ffd700',
+                },
+              },
+              // Estilos para loading
+              loading: {
+                style: {
+                  background: '#ffd700',
+                  color: '#fff',
+                  boxShadow: '0 20px 60px rgba(255, 215, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.12)',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                },
+              },
+            }}
+            containerStyle={{
+              top: 80,
             }}
           />
         </ThemeProvider>
