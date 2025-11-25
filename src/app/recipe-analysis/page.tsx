@@ -10,6 +10,7 @@ import { useTempMessage } from "@/hooks/useTempMessage";
 import { useTTS } from "@/hooks/useTTS";
 import { useStepVisualization } from "@/hooks/useStepVisualization";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLocalAnalysis } from "@/hooks/useLocalAnalysis";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import TempMessageToast from "@/components/TempMessageToast";
@@ -38,6 +39,7 @@ export default function RecipeAnalysisPage() {
   const { userPhoto, userPreferences, isLoading } = useUserData();
   const { theme } = useTheme();
   const mainRef = useRef<HTMLElement | null>(null);
+  const localAnalysis = useLocalAnalysis();
 
   // Estados principales
   const [recipe, setRecipe] = useState("");
@@ -61,6 +63,17 @@ export default function RecipeAnalysisPage() {
   const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
   const { stepImages, loadingSteps, generateStepImage } = useStepVisualization();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Restaurar análisis del localStorage cuando esté listo
+  useEffect(() => {
+    if (localAnalysis.isRestored && localAnalysis.analysis) {
+      setAnalysis(localAnalysis.analysis);
+      setHasSearched(true);
+      setRecipe(localAnalysis.analysis.receta || "");
+      setLastSearchedRecipe(localAnalysis.analysis.receta || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localAnalysis.isRestored]);
 
   // Detectar si es móvil
   useEffect(() => {
@@ -185,6 +198,11 @@ export default function RecipeAnalysisPage() {
 
       const data = await response.json();
       setAnalysis(data.analysis || null);
+      
+      // Guardar en localStorage
+      if (data.analysis) {
+        localAnalysis.saveAnalysis(data.analysis);
+      }
     } catch (error) {
       console.error("Error:", error);
       showError("Hubo un error al analizar la receta. Por favor, intenta de nuevo.", 5000);
@@ -228,6 +246,7 @@ export default function RecipeAnalysisPage() {
     setShowDishEdit(false);
     setPendingDishImage(null);
     tts.stop();
+    localAnalysis.clearAnalysis();
   };
 
   /**

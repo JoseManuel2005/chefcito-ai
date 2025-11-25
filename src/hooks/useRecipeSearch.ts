@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Ingredient } from './useIngredients';
+import { useLocalRecipes } from './useLocalRecipes';
+import type { Recipe as LocalRecipe } from './useLocalRecipes';
 
 /**
  * Interfaz que define la estructura de una receta
@@ -41,6 +43,8 @@ export interface Recipe {
  * ```
  */
 export const useRecipeSearch = () => {
+  const localRecipes = useLocalRecipes();
+  
   /** Lista de recetas encontradas */
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   /** Indica si está buscando recetas actualmente */
@@ -49,6 +53,19 @@ export const useRecipeSearch = () => {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   /** Indica si se ha realizado al menos una búsqueda */
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Restaurar recetas del localStorage cuando esté listo
+  useEffect(() => {
+    if (localRecipes.isRestored && localRecipes.recipes.length > 0) {
+      const recipesWithId = localRecipes.recipes.map((recipe: LocalRecipe, idx: number) => ({
+        ...recipe,
+        id: `${recipe.nombre || 'receta'}-${Date.now()}-${idx}`
+      }));
+      setRecipes(recipesWithId);
+      setHasSearched(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localRecipes.isRestored]);
 
   /**
    * Busca recetas combinando ingredientes manuales y de voz
@@ -133,6 +150,16 @@ export const useRecipeSearch = () => {
         id: `${recipe.nombre || 'receta'}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
       }));
       setRecipes(recipesWithId);
+      
+      // Guardar en localStorage (sin el campo 'id')
+      const recipesToStore: LocalRecipe[] = recipesWithId.map(({ id, ...recipe }) => ({
+        nombre: recipe.nombre || '',
+        ingredientes: recipe.ingredientes || [],
+        pasos: recipe.pasos || [],
+        tiempo: recipe.tiempo || '',
+      }));
+      localRecipes.saveRecipes(recipesToStore);
+      
       if (data.warning) setWarningMessage(data.warning);
     } catch (error) {
       console.error("Error:", error);
@@ -146,6 +173,7 @@ export const useRecipeSearch = () => {
     setRecipes([]);
     setWarningMessage(null);
     setHasSearched(false);
+    localRecipes.clearRecipes();
   };
 
   return {
