@@ -4,8 +4,7 @@
 import { useState } from 'react';
 import { signInWithGoogle } from '@/lib/firebaseClient'; // función que definimos en lib/firebaseClient.ts
 import { useRouter } from 'next/navigation';
-
-
+import { ChefHat, Hand, XCircle, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 
@@ -32,22 +31,32 @@ export default function GoogleSignInButton() {
       const { user, isNew, error } = await signInWithGoogle();
 
       if (error) {
-        toast.error("No se pudo iniciar sesión. Intenta de nuevo.");
+        toast.error("No se pudo iniciar sesión. Por favor, intenta de nuevo.", {
+          icon: <XCircle className="w-5 h-5" />,
+        });
         return;
       }
 
       // 👇 mensaje según el caso
       if (isNew) {
-        toast.success(`¡Bienvenido por primera vez, ${user?.displayName || "Chef"}! 🥳`);
+        toast.success(`¡Bienvenido por primera vez, ${user?.displayName || "Chef"}!`, {
+          duration: 5000,
+          icon: <ChefHat className="w-5 h-5" />,
+        });
         router.push('/onboarding'); // redirige al onboarding si es nuevo
       } else {
-        toast.success(`¡Bienvenido de nuevo, ${user?.displayName || "Chef"}! 👋`);
+        toast.success(`¡Qué gusto verte de nuevo, ${user?.displayName || "Chef"}!`, {
+          duration: 4000,
+          icon: <Hand className="w-5 h-5" />,
+        });
         router.push('/home'); // redirige al home si ya es usuario existente
       }
 
       // router.push('/ejemploInicio'); // redirección
     } catch (error) {
-      toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
+      toast.error("Ocurrió un error inesperado. Por favor, intenta de nuevo.", {
+        icon: <AlertTriangle className="w-5 h-5" />,
+      });
       console.error(error);
     } finally {
       setLoading(false);
