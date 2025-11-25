@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChefHat } from "lucide-react";
 import RecipeCard from "./RecipeCard";
 import { useStepVisualization } from "@/hooks/useStepVisualization";
 import type { Recipe } from "@/hooks/useRecipeSearch";
-import StepCarousel from '@/components/StepCarousel';
 import {
   formatRecipeForText,
   copyToClipboard,
@@ -34,7 +32,12 @@ interface RecipeListProps {
   dishImages: Record<string, string>;
   showDishImage: Record<string, boolean>;
   loadingDishImage: Record<string, boolean>;
-  generateDishImage: (recipeId: string, recipeName: string, ingredients: string[], onError: (msg: string) => void) => void;
+  generateDishImage: (
+    recipeId: string,
+    recipeName: string,
+    ingredients: string[],
+    onError: (msg: string) => void
+  ) => void;
 }
 
 export default function RecipeList({
@@ -59,13 +62,15 @@ export default function RecipeList({
   loadingDishImage,
   generateDishImage,
 }: RecipeListProps) {
-  // 👇 Importado correctamente
-  const [expandedRecipeIndex, setExpandedRecipeIndex] = useState<number | null>(null);
   const { stepImages, loadingSteps, generateStepImage } = useStepVisualization();
 
   if (loading) {
     return (
-      <motion.div className="flex items-center justify-center py-12 md:py-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div
+        className="flex items-center justify-center py-12 md:py-16"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
         <div className="text-center">
           <div className="relative inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-4">
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 blur-md opacity-70 animate-pulse" />
@@ -73,10 +78,10 @@ export default function RecipeList({
               <ChefHat className="w-7 h-7 md:w-8 md:h-8 text-amber-300 animate-bounce" />
             </div>
           </div>
-          <motion.p 
-            className="text-gray-700 dark:text-gray-300 font-medium text-sm md:text-base" 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          <motion.p
+            className="text-gray-700 dark:text-gray-300 font-medium text-sm md:text-base"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
             Generando tus recetas...
@@ -97,14 +102,21 @@ export default function RecipeList({
     <motion.div className="space-y-4 md:space-y-6">
       {recipes.map((recipeItem, index) => {
         const ttsText = `
-          Receta: ${recipeItem.nombre || 'Sin nombre'}.
-          Ingredientes: ${recipeItem.ingredientes?.join(', ') || 'No especificados'}.
-          Preparación: ${recipeItem.pasos?.map((p: string, i: number) => `${i + 1}. ${p}`).join(' ') || 'No especificada'}.
-        `.replace(/\s+/g, ' ').trim();
+          Receta: ${recipeItem.nombre || "Sin nombre"}.
+          Ingredientes: ${
+            recipeItem.ingredientes?.join(", ") || "No especificados"
+          }.
+          Preparación: ${
+            recipeItem.pasos
+              ?.map((p: string, i: number) => `${i + 1}. ${p}`)
+              .join(" ") || "No especificada"
+          }.
+        `
+          .replace(/\s+/g, " ")
+          .trim();
 
         const nombreReceta = recipeItem.nombre || `Receta ${index + 1}`;
         const isFav = isFavorite(nombreReceta);
-        const isExpanded = expandedRecipeIndex === index;
         const recipeId = recipeItem.id || Math.random().toString();
 
         return (
@@ -127,7 +139,9 @@ export default function RecipeList({
                   showError("Inicia sesión para guardar favoritos", 4000);
                   return;
                 }
-                showSuccess(wasFav ? "Eliminado de favoritos" : "Agregado a favoritos");
+                showSuccess(
+                  wasFav ? "Eliminado de favoritos" : "Agregado a favoritos"
+                );
               }}
               currentTTSIndex={currentTTSIndex}
               ttsStatus={ttsStatus}
@@ -153,11 +167,18 @@ export default function RecipeList({
                 setOpenMenuIndex(null);
                 const shareText = formatRecipeForText(recipeItem, index);
                 const ok = await copyToClipboard(shareText);
-                ok ? showSuccess("Receta copiada", 1800) : showError("No se pudo copiar", 1800);
+                ok
+                  ? showSuccess("Receta copiada", 1800)
+                  : showError("No se pudo copiar", 1800);
               }}
               onShareImage={async () => {
                 setOpenMenuIndex(null);
-                await shareRecipeAsImage(recipeItem, index, showSuccess, showError);
+                await shareRecipeAsImage(
+                  recipeItem,
+                  index,
+                  showSuccess,
+                  showError
+                );
               }}
               dishImage={dishImages[recipeId]}
               showDishImage={showDishImage[recipeId] || false}
@@ -166,60 +187,18 @@ export default function RecipeList({
                 if (currentTTSIndex !== null) ttsStop();
                 generateDishImage(
                   recipeId,
-                  recipeItem.nombre || '',
+                  recipeItem.nombre || "",
                   recipeItem.ingredientes || [],
                   showError
                 );
               }}
+              // 👇 Guía visual: todo queda dentro de la card
               stepImages={stepImages[index] || []}
+              loadingSteps={!!loadingSteps[index]}
+              onGenerateSteps={() =>
+                generateStepImage(index.toString(), recipeItem.pasos || [])
+              }
             />
-
-            {/* Botón de guía visual */}
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  if (isExpanded) {
-                    setExpandedRecipeIndex(null);
-                  } else {
-                    setExpandedRecipeIndex(index);
-                    if (!stepImages[index]) {
-                      generateStepImage(index.toString(), recipeItem.pasos || []);
-                    }
-                  }
-                }}
-                className="px-4 py-2 text-sm rounded-xl font-medium 
-                  bg-white/70 text-gray-800 shadow-sm 
-                  hover:bg-white dark:hover:bg-gray-800 
-                  dark:bg-gray-900/40 dark:text-gray-200 
-                  backdrop-blur border border-gray-300/40 
-                  dark:border-gray-700/60 transition-all"
-              >
-                {isExpanded ? 'Ocultar guía visual' : 'Ver guía visual'}
-              </button>
-            </div>
-
-            {/* Carrusel de pasos */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4"
-                >
-                  <h5 className="font-semibold text-gray-900 dark:text-white mb-3 text-center">Guía visual de preparación</h5>
-              
-                  {loadingSteps[index] ? (
-                    <div className="flex justify-center py-4">
-                      <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : stepImages[index] ? (
-                    <StepCarousel steps={recipeItem.pasos || []} images={stepImages[index]} />
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         );
       })}
