@@ -75,6 +75,15 @@ export default function FavoritesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number | null>(null);
   
+  // Estados para la imagen del plato en el modal
+  const [modalDishImage, setModalDishImage] = useState<string | undefined>();
+  const [modalShowDishImage, setModalShowDishImage] = useState(false);
+  const [modalLoadingDishImage, setModalLoadingDishImage] = useState(false);
+  
+  // Estados para las imágenes de los pasos en el modal
+  const [modalStepImages, setModalStepImages] = useState<string[]>([]);
+  const [modalLoadingSteps, setModalLoadingSteps] = useState(false);
+  
   // Estados para selección múltiple
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -137,6 +146,103 @@ export default function FavoritesPage() {
   const closeRecipeDetail = () => {
     setSelectedRecipe(null);
     setSelectedRecipeIndex(null);
+    setModalDishImage(undefined);
+    setModalShowDishImage(false);
+    setModalStepImages([]);
+  };
+
+  // Función para generar imágenes de los pasos en el modal
+  const handleModalGenerateSteps = async () => {
+    if (!selectedRecipe || !selectedRecipe.pasos || selectedRecipe.pasos.length === 0) return;
+
+    setModalLoadingSteps(true);
+
+    try {
+      const images: string[] = [];
+      
+      // Generar imagen para cada paso
+      for (const step of selectedRecipe.pasos) {
+        const res = await fetch("/api/generate-step-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stepText: step }),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Error response:", errorText);
+          throw new Error("Error al generar imagen del paso");
+        }
+
+        const data = await res.json();
+        console.log("Respuesta de la API para paso:", data);
+
+        if (data.imageBase64) {
+          images.push(data.imageBase64);
+        } else {
+          console.warn("No se recibió imagen para este paso");
+          images.push(''); // Placeholder vacío
+        }
+      }
+
+      console.log("Imágenes de pasos generadas:", images.length);
+      setModalStepImages(images);
+    } catch (error) {
+      console.error("Error generando imágenes de pasos:", error);
+      showError("No se pudieron generar las imágenes de preparación");
+    } finally {
+      setModalLoadingSteps(false);
+    }
+  };
+
+  // Función para generar imagen del plato en el modal
+  const handleModalGenerateImage = async () => {
+    if (!selectedRecipe) return;
+
+    if (modalDishImage) {
+      // Si ya existe la imagen, toggle de visibilidad
+      console.log("Toggle imagen - nuevo estado:", !modalShowDishImage);
+      setModalShowDishImage(!modalShowDishImage);
+      return;
+    }
+
+    setModalLoadingDishImage(true);
+    console.log("Generando imagen para:", selectedRecipe.nombre);
+
+    try {
+      const res = await fetch("/api/generate-dish-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipeName: selectedRecipe.nombre || "Receta",
+          ingredients: selectedRecipe.ingredientes || [],
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Error response:", errorText);
+        throw new Error("Error al generar imagen");
+      }
+
+      const data = await res.json();
+      console.log("Respuesta de la API:", data);
+      
+      if (data.imageBase64) {
+        console.log("Imagen recibida, longitud:", data.imageBase64.length);
+        setModalDishImage(data.imageBase64);
+        setModalShowDishImage(true);
+        console.log("Estados actualizados - imagen y show=true");
+      } else {
+        console.warn("No se recibió imagen en la respuesta");
+      }
+    } catch (error) {
+      console.error("Error generando imagen:", error);
+      showError("No se pudo generar la imagen");
+    } finally {
+      setModalLoadingDishImage(false);
+      console.log("Loading finalizado");
+    }
   };
 
   // Funciones de selección múltiple
@@ -1131,6 +1237,13 @@ export default function FavoritesPage() {
         isOpen={!!selectedRecipe}
         onClose={closeRecipeDetail}
         index={selectedRecipeIndex}
+        dishImage={modalDishImage}
+        showDishImage={modalShowDishImage}
+        loadingDishImage={modalLoadingDishImage}
+        onGenerateImage={handleModalGenerateImage}
+        stepImages={modalStepImages}
+        loadingSteps={modalLoadingSteps}
+        onGenerateSteps={handleModalGenerateSteps}
       />
 
       <TempMessageToast message={tempMessage} type={tempMessageType} />
