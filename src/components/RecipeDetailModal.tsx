@@ -353,7 +353,7 @@ export default function RecipeDetailModal({
 
           {/* REVERSO */}
           <div
-            className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[1.5rem] shadow-2xl border border-white/60 dark:border-gray-800/80 p-4 md:p-6 overflow-hidden flex flex-col"
+            className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[1.5rem] shadow-2xl border border-white/60 dark:border-gray-800/80 flex flex-col overflow-hidden"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
@@ -362,7 +362,7 @@ export default function RecipeDetailModal({
             }}
           >
             {/* Header reverso */}
-            <div className="flex items-center justify-between mb-3 md:mb-4 shrink-0 pb-3 md:pb-4 border-b border-gray-200/60 dark:border-gray-700/60">
+            <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 shrink-0 border-b border-gray-200/60 dark:border-gray-700/60">
               <h4 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white truncate pr-2">
                 Guía Visual - {recipe.nombre || `Receta ${(index ?? 0) + 1}`}
               </h4>
@@ -405,7 +405,7 @@ export default function RecipeDetailModal({
             </div>
 
             {/* Contenido principal del reverso: carrusel / loader */}
-            <div className="flex-1 min-h-0 overflow-y-auto" style={{ maxHeight: "calc(90vh - 140px)", WebkitOverflowScrolling: "touch" }}>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 pb-4 md:pb-6" style={{ WebkitOverflowScrolling: "touch" }}>
               {loadingSteps ? (
                 <div className="flex h-full flex-col items-center justify-center py-4 md:py-6 px-4">
                   <div className="w-6 h-6 md:w-8 md:h-8 border-2 md:border-3 border-amber-500 border-t-transparent rounded-full animate-spin mb-2 md:mb-3" />

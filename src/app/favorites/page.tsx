@@ -1043,7 +1043,6 @@ export default function FavoritesPage() {
         </div>
       </div>
         
-        <Footer />
       </div>
 
       {/* Barra flotante de acciones de selección */}
