@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
+    "@floating-ui/react": "^0.27.16",
     "@google/genai": "^1.29.1",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.3.0",

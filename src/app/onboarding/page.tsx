@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ParticleBackground from "@/components/ParticleBackground";
+import Tooltip from "@/components/Tooltip";
 
 export default function OnboardingPage() {
   const [allergies, setAllergies] = useState<string[]>([""]);
@@ -297,7 +298,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="w-full group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                    className="w-full group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer"
                   >
                     Continuar
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -388,7 +389,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}
-                    className="flex-1 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="flex-1 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4 inline mr-1" />
                     Atrás
@@ -396,7 +397,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(3)}
-                    className="flex-1 group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                    className="flex-1 group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer"
                   >
                     Continuar
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -444,7 +445,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="flex-1 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="flex-1 py-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4 inline mr-1" />
                     Atrás
@@ -452,7 +453,7 @@ export default function OnboardingPage() {
                   <button
                     type="submit"
                     disabled={!country}
-                    className="flex-1 group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
+                    className="flex-1 group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 py-3 px-5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-500/40 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
                     Finalizar
@@ -465,17 +466,19 @@ export default function OnboardingPage() {
 
         {/* Botón de tema */}
         <div className="flex justify-center mt-8">
-          <button
-            onClick={toggleTheme}
-            className="p-3 rounded-full hover:bg-white/80 dark:hover:bg-gray-900/80 backdrop-blur-sm border border-white/60 dark:border-gray-800/80 shadow-md hover:shadow-lg transition-all duration-200"
-            aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
-          >
-            {theme === 'light' ? (
-              <Moon className="w-6 h-6 text-gray-700 dark:text-amber-200" />
-            ) : (
-              <Sun className="w-6 h-6 text-amber-600 dark:text-amber-300" />
-            )}
-          </button>
+          <Tooltip content={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'} colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+            <button
+              onClick={toggleTheme}
+              className="p-3 rounded-full hover:bg-white/80 dark:hover:bg-gray-900/80 backdrop-blur-sm border border-white/60 dark:border-gray-800/80 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 group cursor-pointer"
+              aria-label={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
+            >
+              {theme === 'light' ? (
+                <Moon className="w-6 h-6 text-gray-700 dark:text-amber-200 group-hover:rotate-12 transition-transform duration-300" />
+              ) : (
+                <Sun className="w-6 h-6 text-amber-600 dark:text-amber-300 group-hover:rotate-180 transition-transform duration-500" />
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
     </main>

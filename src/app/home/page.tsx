@@ -93,10 +93,10 @@ export default function HomePage() {
                 {/* Badge estilo login */}
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-3 py-1 text-[11px] font-medium text-gray-900 shadow-md backdrop-blur dark:border-gray-800/80 dark:bg-gray-900/80 dark:text-gray-100 mb-4">
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-amber-300 dark:bg-gray-800">
-                    <ChefHat className="h-3 w-3" />
+                    <Sparkles className="h-3 w-3" />
                   </div>
                   <span className="flex items-center gap-1">
-                    <Sparkles className="h-3 w-3 text-yellow-400" />
+                    
                     Chefcito AI · Tu cocina inteligente
                   </span>
                 </div>
@@ -392,7 +392,7 @@ export default function HomePage() {
 
                   <button
                     onClick={() => router.push("/onboarding")}
-                    className="mt-4 inline-flex items-center gap-2 text-[11px] font-medium text-amber-700 hover:text-amber-900 transition-colors dark:text-amber-300 dark:hover:text-amber-100"
+                    className="mt-4 inline-flex items-center gap-2 text-[11px] font-medium text-amber-700 hover:text-amber-900 transition-colors dark:text-amber-300 dark:hover:text-amber-100 cursor-pointer"
                   >
                     <Settings className="w-3.5 h-3.5" />
                     Ajustar preferencias y restricciones
@@ -451,7 +451,7 @@ export default function HomePage() {
 
                   <button
                     onClick={() => router.push("/favorites")}
-                    className="mt-4 inline-flex items-center gap-2 text-[11px] font-medium text-pink-600 hover:text-pink-700 transition-colors dark:text-pink-300 dark:hover:text-pink-200"
+                    className="mt-4 inline-flex items-center gap-2 text-[11px] font-medium text-pink-600 hover:text-pink-700 transition-colors dark:text-pink-300 dark:hover:text-pink-200 cursor-pointer"
                   >
                     <Heart className="w-3.5 h-3.5" />
                     Ver todas tus recetas favoritas

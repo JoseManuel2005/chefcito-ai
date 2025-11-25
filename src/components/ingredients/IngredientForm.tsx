@@ -8,6 +8,7 @@ import EditableChips from '@/components/EditableChips';
 import { itemVariants } from "@/utils/animations";
 import { useState } from "react";
 import type { Ingredient } from "@/hooks/useIngredients";
+import Tooltip from "../Tooltip";
 
 /**
  * Props del componente IngredientForm
@@ -208,29 +209,26 @@ export default function IngredientForm({
                 </button>
               </div>
             ) : (
-              <div className={`p-5 rounded-2xl border-2 shadow-lg ${
-                detectionType === 'visual' 
-                  ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300/50 dark:border-green-700/50'
-                  : 'bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300/50 dark:border-yellow-700/50'
-              }`}>
+              <div className={`p-5 rounded-2xl border-2 shadow-lg ${detectionType === 'visual'
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300/50 dark:border-green-700/50'
+                : 'bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300/50 dark:border-yellow-700/50'
+                }`}>
                 <div className="flex items-center gap-2 mb-3">
                   {detectionType === 'visual' ? (
                     <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
                   ) : (
                     <CheckCircle2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                   )}
-                  <h4 className={`text-base font-bold ${
-                    detectionType === 'visual' 
-                      ? 'text-green-800 dark:text-green-300'
-                      : 'text-yellow-800 dark:text-yellow-300'
-                  }`}>
+                  <h4 className={`text-base font-bold ${detectionType === 'visual'
+                    ? 'text-green-800 dark:text-green-300'
+                    : 'text-yellow-800 dark:text-yellow-300'
+                    }`}>
                     {detectionType === 'visual' ? 'Ingredientes identificados visualmente' : 'Ingredientes detectados'}
                   </h4>
-                  <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-semibold ${
-                    detectionType === 'visual'
-                      ? 'bg-green-200 dark:bg-green-800/50 text-green-700 dark:text-green-300'
-                      : 'bg-yellow-200 dark:bg-yellow-800/50 text-yellow-700 dark:text-yellow-300'
-                  }`}>
+                  <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-semibold ${detectionType === 'visual'
+                    ? 'bg-green-200 dark:bg-green-800/50 text-green-700 dark:text-green-300'
+                    : 'bg-yellow-200 dark:bg-yellow-800/50 text-yellow-700 dark:text-yellow-300'
+                    }`}>
                     {ingredientsFromImage.length} {ingredientsFromImage.length === 1 ? 'ingrediente' : 'ingredientes'}
                   </span>
                 </div>
@@ -246,12 +244,11 @@ export default function IngredientForm({
                   </div>
                 )}
 
-                <p className={`text-sm mb-3 ${
-                  detectionType === 'visual' 
-                    ? 'text-green-700 dark:text-green-400'
-                    : 'text-yellow-700 dark:text-yellow-400'
-                }`}>
-                  {detectionType === 'visual' 
+                <p className={`text-sm mb-3 ${detectionType === 'visual'
+                  ? 'text-green-700 dark:text-green-400'
+                  : 'text-yellow-700 dark:text-yellow-400'
+                  }`}>
+                  {detectionType === 'visual'
                     ? 'Ingredientes identificados usando inteligencia artificial. Revisa y confirma antes de agregar.'
                     : 'Revisa y edita los ingredientes antes de agregarlos a tu lista'
                   }
@@ -264,19 +261,17 @@ export default function IngredientForm({
                   />
                 </div>
 
-                <div className={`flex gap-2 mt-4 pt-4 ${
-                  detectionType === 'visual' 
-                    ? 'border-t border-green-200 dark:border-green-800'
-                    : 'border-t border-yellow-200 dark:border-yellow-800'
-                }`}>
+                <div className={`flex gap-2 mt-4 pt-4 ${detectionType === 'visual'
+                  ? 'border-t border-green-200 dark:border-green-800'
+                  : 'border-t border-yellow-200 dark:border-yellow-800'
+                  }`}>
                   <motion.button
                     type="button"
                     onClick={onSaveImageIngredients}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer ${
-                      detectionType === 'visual'
-                        ? 'bg-green-400 hover:bg-green-500 text-gray-800'
-                        : 'bg-yellow-400 hover:bg-yellow-500 text-gray-800'
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer ${detectionType === 'visual'
+                      ? 'bg-green-400 hover:bg-green-500 text-gray-800'
+                      : 'bg-yellow-400 hover:bg-yellow-500 text-gray-800'
+                      }`}
                     whileHover={{ scale: 1.007 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -319,14 +314,18 @@ export default function IngredientForm({
 
                 <div className="flex flex-col sm:flex-row items-start gap-2 w-full sm:w-auto">
                   <div className="relative w-full sm:w-auto min-w-[170px]">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                    <input
-                      type="date"
-                      value={ingredient.expiry || ""}
-                      onChange={(e) => onChangeIngredientExpiry(e.target.value, index)}
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm cursor-pointer"
-                      aria-label="Fecha de vencimiento (opcional)"
-                    />
+                    <Tooltip
+                      content="Fecha de vencimiento (opcional)"
+                      colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                      <input
+                        type="date"
+                        value={ingredient.expiry || ""}
+                        onChange={(e) => onChangeIngredientExpiry(e.target.value, index)}
+                        className="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-black dark:text-white dark:bg-gray-800 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors text-sm cursor-pointer"
+                        aria-label="Fecha de vencimiento (opcional)"
+                      />
+                    </Tooltip>
                   </div>
 
                   <div className="flex items-center gap-2 self-center sm:self-start">
@@ -337,8 +336,8 @@ export default function IngredientForm({
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.8 }}
                           className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${isExpired
-                              ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                              : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
+                            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                            : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
                             }`}
                         >
                           {isExpired ? "Vencido" : `Vence en ${daysUntil} días`}
@@ -401,7 +400,7 @@ export default function IngredientForm({
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
-          
+
           {/* Selector de fuente cuando hay múltiples ingredientes */}
           {(hasManualIngredients || hasImageIngredients) && voiceTranscription.trim() !== "" && (
             <motion.div
@@ -415,11 +414,11 @@ export default function IngredientForm({
                   Tienes múltiples fuentes de ingredientes
                 </h4>
               </div>
-              
+
               <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
                 Elige qué ingredientes quieres usar para buscar recetas:
               </p>
-              
+
               <div className="space-y-2">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -433,7 +432,7 @@ export default function IngredientForm({
                     <strong>Combinar todos:</strong> Ingredientes manuales{hasImageIngredients ? ", por foto" : ""} y por voz
                   </span>
                 </label>
-                
+
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="radio"
@@ -447,7 +446,7 @@ export default function IngredientForm({
                   </span>
                 </label>
               </div>
-              
+
               <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg">
                 <p className="text-xs text-blue-600 dark:text-blue-400">
                   <strong>Ingredientes por voz:</strong> {voiceTranscription || "(ninguno)"}
@@ -455,7 +454,7 @@ export default function IngredientForm({
               </div>
             </motion.div>
           )}
-          
+
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Este campo aparece tras usar el micrófono. Edita si la transcripción no es precisa.
           </p>
@@ -520,8 +519,8 @@ export default function IngredientForm({
           ) : (
             <>
               <Search className="w-4 h-4" />
-              {useOnlyVoiceIngredients && voiceTranscription.trim() !== "" 
-                ? "Buscar con ingredientes por voz" 
+              {useOnlyVoiceIngredients && voiceTranscription.trim() !== ""
+                ? "Buscar con ingredientes por voz"
                 : "Buscar recetas"
               }
             </>
