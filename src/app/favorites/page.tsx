@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import TempMessageToast from "@/components/TempMessageToast";
 import ShareMenu from "@/components/ShareMenu";
 import RecipeDetailModal, { Recipe } from "@/components/RecipeDetailModal";
+import Tooltip from "@/components/Tooltip";
 import { useUserData } from "@/hooks/useUserData";
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
 import { useTempMessage } from "@/hooks/useTempMessage";
@@ -753,34 +754,37 @@ export default function FavoritesPage() {
                           {/* Botones de acción */}
                           {!selectionMode && (
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <motion.button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openRecipeDetail(recipe, index);
-                                }}
-                                className="p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
-                                whileHover={{ scale: 1.08 }}
-                                whileTap={{ scale: 0.95 }}
-                                aria-label="Ver detalles"
-                              >
-                                <Eye className="w-5 h-5" />
-                              </motion.button>
-
-                              <div className="relative" id={`fav-menu-list-${index}`}>
+                              <Tooltip content="Ver receta completa" colorClass="bg-blue-600 text-white dark:bg-blue-600 dark:text-white">
                                 <motion.button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setOpenMenuIndex((v) => (v === index ? null : index));
+                                    openRecipeDetail(recipe, index);
                                   }}
-                                  className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                                  className="p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
                                   whileHover={{ scale: 1.08 }}
                                   whileTap={{ scale: 0.95 }}
-                                  aria-label="Más opciones"
+                                  aria-label="Ver detalles"
                                 >
-                                  <Share2 className="w-5 h-5" />
+                                  <Eye className="w-5 h-5" />
                                 </motion.button>
+                              </Tooltip>
+
+                              <Tooltip content="Compartir receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                                <div className="relative" id={`fav-menu-list-${index}`}>
+                                  <motion.button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuIndex((v) => (v === index ? null : index));
+                                    }}
+                                    className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                                    whileHover={{ scale: 1.08 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    aria-label="Más opciones"
+                                  >
+                                    <Share2 className="w-5 h-5" />
+                                  </motion.button>
 
                                 {openMenuIndex === index && (
                                   <ShareMenu
@@ -802,29 +806,32 @@ export default function FavoritesPage() {
                                     }}
                                   />
                                 )}
-                              </div>
+                                </div>
+                              </Tooltip>
 
-                              <motion.button
-                                type="button"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const ok = await toggleFavorite({
-                                    nombre: recipe.nombre,
-                                    ingredientes: recipe.ingredientes,
-                                    pasos: recipe.pasos,
-                                    tiempo: recipe.tiempo,
-                                  });
-                                  ok
-                                    ? showError("Eliminado de favoritos")
-                                    : showError("No se pudo actualizar el favorito");
-                                }}
-                                className="p-2 rounded-full transition-colors cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20"
-                                whileHover={{ scale: 1.08 }}
-                                whileTap={{ scale: 0.95 }}
-                                aria-label="Quitar de favoritos"
-                              >
-                                <Trash2 className="w-5 h-5 text-red-500 dark:text-red-400" />
-                              </motion.button>
+                              <Tooltip content="Eliminar de favoritos" colorClass="bg-red-500 text-white dark:bg-red-500 dark:text-white">
+                                <motion.button
+                                  type="button"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const ok = await toggleFavorite({
+                                      nombre: recipe.nombre,
+                                      ingredientes: recipe.ingredientes,
+                                      pasos: recipe.pasos,
+                                      tiempo: recipe.tiempo,
+                                    });
+                                    ok
+                                      ? showError("Eliminado de favoritos")
+                                      : showError("No se pudo actualizar el favorito");
+                                  }}
+                                  className="p-2 rounded-full transition-colors cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  whileHover={{ scale: 1.08 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  aria-label="Quitar de favoritos"
+                                >
+                                  <Trash2 className="w-5 h-5 text-red-500 dark:text-red-400" />
+                                </motion.button>
+                              </Tooltip>
                             </div>
                           )}
                         </div>
@@ -903,37 +910,40 @@ export default function FavoritesPage() {
                         {!selectionMode && (
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {/* Botón Ver Detalles */}
-                          <motion.button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openRecipeDetail(recipe, index);
-                            }}
-                            className="p-1.5 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label="Ver detalles"
-                            title="Ver receta completa"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </motion.button>
-
-                          {/* Menú compacto (compartir) */}
-                          <div className="relative" id={`fav-menu-${index}`}>
+                          <Tooltip content="Ver receta completa" colorClass="bg-blue-600 text-white dark:bg-blue-600 dark:text-white">
                             <motion.button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setOpenMenuIndex((v) => (v === index ? null : index));
+                                openRecipeDetail(recipe, index);
                               }}
-                              className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                              className="p-1.5 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
                               whileHover={{ scale: 1.08 }}
                               whileTap={{ scale: 0.95 }}
-                              aria-label="Más opciones"
-                              title="Compartir / Copiar"
+                              aria-label="Ver detalles"
+                              title="Ver receta completa"
                             >
-                              <Share2 className="w-5 h-5" />
+                              <Eye className="w-5 h-5" />
                             </motion.button>
+                          </Tooltip>
+
+                          {/* Menú compacto (compartir) */}
+                          <Tooltip content="Compartir receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                            <div className="relative" id={`fav-menu-${index}`}>
+                              <motion.button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuIndex((v) => (v === index ? null : index));
+                                }}
+                                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.95 }}
+                                aria-label="Más opciones"
+                                title="Compartir / Copiar"
+                              >
+                                <Share2 className="w-5 h-5" />
+                              </motion.button>
 
                             {openMenuIndex === index && (
                               <ShareMenu
@@ -960,30 +970,33 @@ export default function FavoritesPage() {
                                 }}
                               />
                             )}
-                          </div>
+                            </div>
+                          </Tooltip>
 
                           {/* Quitar de favoritos */}
-                          <motion.button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const ok = await toggleFavorite({
-                                nombre: recipe.nombre,
-                                ingredientes: recipe.ingredientes,
-                                pasos: recipe.pasos,
-                                tiempo: recipe.tiempo,
-                              });
-                              ok
-                                ? showError("Eliminado de favoritos")
-                                : showError("No se pudo actualizar el favorito");
-                            }}
-                            className="p-1.5 rounded-full transition-colors cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20"
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label="Quitar de favoritos"
-                          >
-                            <Trash2 className="w-5 h-5 text-red-500 dark:text-red-400" />
-                          </motion.button>
+                          <Tooltip content="Eliminar de favoritos" colorClass="bg-red-500 text-white dark:bg-red-500 dark:text-white">
+                            <motion.button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const ok = await toggleFavorite({
+                                  nombre: recipe.nombre,
+                                  ingredientes: recipe.ingredientes,
+                                  pasos: recipe.pasos,
+                                  tiempo: recipe.tiempo,
+                                });
+                                ok
+                                  ? showError("Eliminado de favoritos")
+                                  : showError("No se pudo actualizar el favorito");
+                              }}
+                              className="p-1.5 rounded-full transition-colors cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20"
+                              whileHover={{ scale: 1.08 }}
+                              whileTap={{ scale: 0.95 }}
+                              aria-label="Quitar de favoritos"
+                            >
+                              <Trash2 className="w-5 h-5 text-red-500 dark:text-red-400" />
+                            </motion.button>
+                          </Tooltip>
                         </div>
                         )}
                       </div>

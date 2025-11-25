@@ -17,6 +17,7 @@ import {
 import ShareMenu from "@/components/ShareMenu";
 import { useRecipeVideo } from "@/hooks/useRecipeVideo";
 import StepCarousel from "@/components/StepCarousel";
+import Tooltip from "@/components/Tooltip";
 import type { Recipe } from "@/hooks/useRecipeSearch";
 
 interface RecipeCardProps {
@@ -149,21 +150,23 @@ export default function RecipeCard({
                     {nombreReceta}
                   </h4>
                   <div className="flex items-center gap-1">
-                    <div className="relative" id={`menu-${index}`}>
-                      <motion.button
-                        type="button"
-                        onClick={() =>
-                          setOpenMenuIndex(
-                            openMenuIndex === index ? null : index
-                          )
-                        }
-                        className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        aria-label="Más opciones"
-                      >
-                        <Share2 className="w-5 h-5" />
-                      </motion.button>
+                    <div className="relative flex items-center" id={`menu-${index}`}>
+                      <Tooltip content="Compartir receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                        <motion.button
+                          type="button"
+                          onClick={() =>
+                            setOpenMenuIndex(
+                              openMenuIndex === index ? null : index
+                            )
+                          }
+                          className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          aria-label="Más opciones"
+                        >
+                          <Share2 className="w-5 h-5" />
+                        </motion.button>
+                      </Tooltip>
                       {openMenuIndex === index && (
                         <ShareMenu
                           onShareText={onShareText}
@@ -173,69 +176,96 @@ export default function RecipeCard({
                       )}
                     </div>
 
-                    <motion.button
-                      type="button"
-                      onClick={onTTSClick}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      aria-label={
+                    <Tooltip
+                      content={
                         currentTTSIndex === index && ttsStatus === "playing"
                           ? "Pausar lectura"
-                          : "Leer receta"
+                          : "Reproducir receta"
                       }
+                      colorClass="bg-blue-600 text-white dark:bg-blue-500 dark:text-white"
                     >
-                      {currentTTSIndex === index &&
-                        ttsStatus === "loading" ? (
-                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      ) : currentTTSIndex === index &&
-                        ttsStatus === "playing" ? (
-                        <Pause className="w-5 h-5" />
-                      ) : (
-                        <Volume2 className="w-5 h-5" />
-                      )}
-                    </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={onTTSClick}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={
+                          currentTTSIndex === index && ttsStatus === "playing"
+                            ? "Pausar lectura"
+                            : "Leer receta"
+                        }
+                      >
+                        {currentTTSIndex === index &&
+                          ttsStatus === "loading" ? (
+                          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        ) : currentTTSIndex === index &&
+                          ttsStatus === "playing" ? (
+                          <Pause className="w-5 h-5" />
+                        ) : (
+                          <Volume2 className="w-5 h-5" />
+                        )}
+                      </motion.button>
+                    </Tooltip>
 
-                    <motion.button
-                      type="button"
-                      onClick={onGenerateImage}
-                      className="p-1.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      aria-label={
+                    <Tooltip
+                      content={
                         dishImage
-                          ? "Ver/Ocultar imagen"
+                          ? (showDishImage ? "Ocultar imagen" : "Mostrar imagen")
                           : "Generar imagen del plato"
                       }
+                      colorClass="bg-purple-600 text-white dark:bg-purple-500 dark:text-white"
                     >
-                      {loadingDishImage ? (
-                        <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                      ) : dishImage ? (
-                        <Eye className="w-5 h-5" />
-                      ) : (
-                        <ImageIcon className="w-5 h-5" />
-                      )}
-                    </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={onGenerateImage}
+                        className="p-1.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={
+                          dishImage
+                            ? "Ver/Ocultar imagen"
+                            : "Generar imagen del plato"
+                        }
+                      >
+                        {loadingDishImage ? (
+                          <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                        ) : dishImage ? (
+                          <Eye className="w-5 h-5" />
+                        ) : (
+                          <ImageIcon className="w-5 h-5" />
+                        )}
+                      </motion.button>
+                    </Tooltip>
 
-                    <motion.button
-                      type="button"
-                      onClick={onToggleFavorite}
-                      className="p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      aria-label={
+                    <Tooltip
+                      content={
                         isFavorite
                           ? "Quitar de favoritos"
                           : "Agregar a favoritos"
                       }
+                      colorClass="bg-yellow-500 text-gray-900 dark:bg-yellow-400 dark:text-gray-900"
                     >
-                      <Heart
-                        className={`w-5 h-5 transition-colors ${isFavorite
-                            ? "text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400"
-                            : "text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400"
-                          }`}
-                      />
-                    </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={onToggleFavorite}
+                        className="p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={
+                          isFavorite
+                            ? "Quitar de favoritos"
+                            : "Agregar a favoritos"
+                        }
+                      >
+                        <Heart
+                          className={`w-5 h-5 transition-colors ${isFavorite
+                              ? "text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400"
+                              : "text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400"
+                            }`}
+                        />
+                      </motion.button>
+                    </Tooltip>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
@@ -360,38 +390,45 @@ export default function RecipeCard({
 
               <div className="flex items-center gap-2">
                 {/* botón de video */}
-                <motion.button
-                  type="button"
-                  onClick={handleGenerateVideo}
-                  disabled={isGenerating || loadingSteps || stepImages.length === 0}
-                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/40 dark:hover:text-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  whileHover={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
-                  }}
-                  whileTap={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
-                  }}
-                  aria-label="Generar / ver video de preparación"
+                <Tooltip
+                  content={videoUrl ? "Ver video" : "Generar video de preparación"}
+                  colorClass="bg-green-600 text-white dark:bg-green-500 dark:text-white"
                 >
-                  {isGenerating ? (
-                    <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Play className="w-4 h-4" />
-                  )}
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleGenerateVideo}
+                    disabled={isGenerating || loadingSteps || stepImages.length === 0}
+                    className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/40 dark:hover:text-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    whileHover={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
+                    }}
+                    whileTap={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
+                    }}
+                    aria-label="Generar / ver video de preparación"
+                  >
+                    {isGenerating ? (
+                      <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </motion.button>
+                </Tooltip>
 
-                <motion.button
-                  type="button"
-                  onClick={handleFlipCard}
-                  className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors"
-                  whileHover={{ scale: 1.1, rotate: -180 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Volver a la receta"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </motion.button>
+                <Tooltip content="Volver a la receta" colorClass="bg-gray-700 text-white dark:bg-gray-200 dark:text-gray-800">
+                  <motion.button
+                    type="button"
+                    onClick={handleFlipCard}
+                    className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                    whileHover={{ scale: 1.1, rotate: -180 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Volver a la receta"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </motion.button>
+                </Tooltip>
               </div>
             </div>
 
@@ -421,7 +458,7 @@ export default function RecipeCard({
             <button
               type="button"
               onClick={() => setShowVideoModal(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-colors"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-colors cursor-pointer"
               aria-label="Cerrar video"
             >
               <X className="w-5 h-5" />

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import ShareMenu from "@/components/ShareMenu";
 import StepCarousel from "@/components/StepCarousel";
+import Tooltip from "@/components/Tooltip";
 import { useRecipeVideo } from "@/hooks/useRecipeVideo";
 import {
   formatRecipeForText,
@@ -95,6 +96,16 @@ export default function AnalysisResult({
     if (!isFlipped && onGenerateSteps && stepImages.length === 0) {
       onGenerateSteps();
     }
+    
+    // Scroll suave hacia arriba solo cuando se voltea hacia el reverso (guía visual)
+    if (!isFlipped) {
+      const scrollTop = isMobile ? 500 : 300;
+      window.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+    }
+    
     setIsFlipped(!isFlipped);
   };
 
@@ -145,18 +156,20 @@ export default function AnalysisResult({
 
                   {/* Botonera: Audio / Menú / Favorito */}
                   <div className="flex items-center gap-1">
-                    <div className="relative" id="analysis-share-menu">
-                      <motion.button
-                        type="button"
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        aria-label="Más opciones"
-                        title="Compartir / Copiar"
-                      >
-                        <Share2 className="w-5 h-5" />
-                      </motion.button>
+                    <div className="relative flex items-center" id="analysis-share-menu">
+                      <Tooltip content="Compartir receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                        <motion.button
+                          type="button"
+                          onClick={() => setMenuOpen(!menuOpen)}
+                          className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          aria-label="Más opciones"
+                          title="Compartir / Copiar"
+                        >
+                          <Share2 className="w-5 h-5" />
+                        </motion.button>
+                      </Tooltip>
 
                       {menuOpen && (
                         <ShareMenu
@@ -185,39 +198,49 @@ export default function AnalysisResult({
                       )}
                     </div>
 
-                    <motion.button
-                      type="button"
-                      onClick={onTTSAction}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      aria-label={ttsStatus === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                    <Tooltip
+                      content={ttsStatus === "playing" ? "Pausar lectura" : "Reproducir receta"}
+                      colorClass="bg-blue-600 text-white dark:bg-blue-500 dark:text-white"
                     >
-                      {ttsStatus === "loading" ? (
-                        <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                      ) : ttsStatus === "playing" ? (
-                        <Pause className="w-5 h-5" />
-                      ) : (
-                        <Volume2 className="w-5 h-5" />
-                      )}
-                    </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={onTTSAction}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={ttsStatus === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                      >
+                        {ttsStatus === "loading" ? (
+                          <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        ) : ttsStatus === "playing" ? (
+                          <Pause className="w-5 h-5" />
+                        ) : (
+                          <Volume2 className="w-5 h-5" />
+                        )}
+                      </motion.button>
+                    </Tooltip>
 
-                    <motion.button
-                      type="button"
-                      onClick={onToggleFavorite}
-                      className="p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-green-50 dark:hover:bg-green-900/20"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+                    <Tooltip
+                      content={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+                      colorClass="bg-green-500 text-white dark:bg-green-400 dark:text-gray-900"
                     >
-                      <Heart
-                        className={`w-5 h-5 transition-colors ${
-                          isFavorite
-                            ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
-                            : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
-                        }`}
-                      />
-                    </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={onToggleFavorite}
+                        className="p-1.5 rounded-full transition-colors cursor-pointer group hover:bg-green-50 dark:hover:bg-green-900/20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+                      >
+                        <Heart
+                          className={`w-5 h-5 transition-colors ${
+                            isFavorite
+                              ? "text-green-600 dark:text-green-400 fill-green-600 dark:fill-green-400"
+                              : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+                          }`}
+                        />
+                      </motion.button>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -358,38 +381,45 @@ export default function AnalysisResult({
 
               <div className="flex items-center gap-2">
                 {/* botón de video */}
-                <motion.button
-                  type="button"
-                  onClick={handleGenerateVideo}
-                  disabled={isGenerating || loadingSteps || stepImages.length === 0}
-                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/40 dark:hover:text-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  whileHover={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
-                  }}
-                  whileTap={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
-                  }}
-                  aria-label="Generar / ver video de preparación"
+                <Tooltip
+                  content={videoUrl ? "Ver video" : "Generar video de preparación"}
+                  colorClass="bg-green-600 text-white dark:bg-green-500 dark:text-white"
                 >
-                  {isGenerating ? (
-                    <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Play className="w-4 h-4" />
-                  )}
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleGenerateVideo}
+                    disabled={isGenerating || loadingSteps || stepImages.length === 0}
+                    className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900/40 dark:hover:text-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    whileHover={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
+                    }}
+                    whileTap={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
+                    }}
+                    aria-label="Generar / ver video de preparación"
+                  >
+                    {isGenerating ? (
+                      <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </motion.button>
+                </Tooltip>
 
-                <motion.button
-                  type="button"
-                  onClick={handleFlipCard}
-                  className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors"
-                  whileHover={{ scale: 1.1, rotate: -180 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Volver a la receta"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </motion.button>
+                <Tooltip content="Volver a la receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                  <motion.button
+                    type="button"
+                    onClick={handleFlipCard}
+                    className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                    whileHover={{ scale: 1.1, rotate: -180 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Volver a la receta"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </motion.button>
+                </Tooltip>
               </div>
             </div>
 
@@ -419,7 +449,7 @@ export default function AnalysisResult({
             <button
               type="button"
               onClick={() => setShowVideoModal(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-colors"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-colors cursor-pointer"
               aria-label="Cerrar video"
             >
               <X className="w-5 h-5" />

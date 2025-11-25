@@ -5,6 +5,7 @@ import { Clock, Users, X, Volume2, Pause, Utensils, UtensilsCrossed, ImageIcon, 
 import { useTTS } from "@/hooks/useTTS";
 import { useEffect, useState } from "react";
 import ChiefLogo from "@/components/ChiefLogo";
+import Tooltip from "@/components/Tooltip";
 import StepCarousel from "@/components/StepCarousel";
 import { useRecipeVideo } from "@/hooks/useRecipeVideo";
 
@@ -214,8 +215,10 @@ export default function RecipeDetailModal({
                 <motion.button
                   type="button"
                   onClick={handleFlipCard}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-medium bg-gradient-to-r from-amber-500 to-amber-400 text-white shadow-md hover:from-amber-600 hover:to-amber-500 hover:shadow-lg transition-all duration-200 cursor-pointer"
-                  whileHover={{ scale: 1.05 }}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-medium bg-yellow-500 text-white shadow-lg 
+                  hover:from-amber-600 hover:to-amber-500 hover:shadow-xl
+                  dark:text-gray-900 cursor-pointer"
+                  whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(251, 191, 36, 0.3)" }}
                   whileTap={{ scale: 0.95 }}
                   title="Ver guía visual interactiva"
                 >
@@ -225,56 +228,72 @@ export default function RecipeDetailModal({
                 </motion.button>
 
                 {/* Botón de TTS (Escuchar) */}
-                <motion.button
-                  type="button"
-                  onClick={handleTTSToggle}
-                  className="p-2 md:p-2.5 text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 rounded-full hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all cursor-pointer"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
-                  title={tts.status === "playing" ? "Pausar" : "Escuchar receta"}
+                <Tooltip
+                  content={tts.status === "playing" ? "Pausar lectura" : "Reproducir receta"}
+                  colorClass="bg-pink-600 text-white dark:bg-pink-500 dark:text-white"
                 >
-                  {tts.status === "loading" ? (
-                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                  ) : tts.status === "playing" ? (
-                    <Pause className="w-4 h-4 md:w-5 md:h-5" />
-                  ) : (
-                    <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
-                  )}
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleTTSToggle}
+                    className="p-2 md:p-2.5 text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 rounded-full hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all cursor-pointer"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={tts.status === "playing" ? "Pausar lectura" : "Leer receta en voz alta"}
+                    title={tts.status === "playing" ? "Pausar" : "Escuchar receta"}
+                  >
+                    {tts.status === "loading" ? (
+                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                    ) : tts.status === "playing" ? (
+                      <Pause className="w-4 h-4 md:w-5 md:h-5" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 md:w-5 md:h-5" />
+                    )}
+                  </motion.button>
+                </Tooltip>
 
                 {/* Botón de Generación de Imagen */}
                 {onGenerateImage && (
-                  <motion.button
-                    type="button"
-                    onClick={onGenerateImage}
-                    className="p-2 md:p-2.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all cursor-pointer"
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label={dishImage ? "Ver/Ocultar imagen" : "Generar imagen del plato"}
-                    title={dishImage ? "Ver/Ocultar imagen" : "Generar imagen del plato"}
+                  <Tooltip
+                    content={
+                      dishImage
+                        ? (showDishImage ? "Ocultar imagen" : "Mostrar imagen")
+                        : "Generar imagen del plato"
+                    }
+                    colorClass="bg-purple-600 text-white dark:bg-purple-500 dark:text-white"
                   >
-                    {loadingDishImage ? (
-                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    ) : dishImage ? (
-                      <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                    ) : (
-                      <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    )}
-                  </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={onGenerateImage}
+                      className="p-2 md:p-2.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all cursor-pointer"
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
+                      aria-label={dishImage ? "Ver/Ocultar imagen" : "Generar imagen del plato"}
+                      title={dishImage ? "Ver/Ocultar imagen" : "Generar imagen del plato"}
+                    >
+                      {loadingDishImage ? (
+                        <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                      ) : dishImage ? (
+                        <Eye className="w-4 h-4 md:w-5 md:h-5" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
+                      )}
+                    </motion.button>
+                  </Tooltip>
                 )}
 
                 {/* Botón de Cerrar */}
-                <motion.button
-                  onClick={handleClose}
-                  className="p-2 md:p-2.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800/80 transition-all cursor-pointer"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Cerrar"
-                  title="Cerrar"
-                >
-                  <X className="w-4 h-4 md:w-5 md:h-5" />
-                </motion.button>
+                <Tooltip content="Cerrar" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                  <motion.button
+                    onClick={handleClose}
+                    className="p-2 md:p-2.5 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800/80 transition-all cursor-pointer"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Cerrar"
+                    title="Cerrar"
+                  >
+                    <X className="w-4 h-4 md:w-5 md:h-5" />
+                  </motion.button>
+                </Tooltip>
               </div>
             </div>
 
@@ -369,38 +388,45 @@ export default function RecipeDetailModal({
 
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                 {/* Botón de video */}
-                <motion.button
-                  type="button"
-                  onClick={handleGenerateVideo}
-                  disabled={isGenerating || loadingSteps || stepImages.length === 0}
-                  className="p-1.5 md:p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/40 dark:hover:text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  whileHover={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
-                  }}
-                  whileTap={{
-                    scale:
-                      isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
-                  }}
-                  aria-label="Generar / ver video de preparación"
+                <Tooltip
+                  content={videoUrl ? "Ver video" : "Generar video de preparación"}
+                  colorClass="bg-amber-600 text-white dark:bg-amber-500 dark:text-white"
                 >
-                  {isGenerating ? (
-                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  )}
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleGenerateVideo}
+                    disabled={isGenerating || loadingSteps || stepImages.length === 0}
+                    className="p-1.5 md:p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/40 dark:hover:text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    whileHover={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 1.05,
+                    }}
+                    whileTap={{
+                      scale:
+                        isGenerating || loadingSteps || stepImages.length === 0 ? 1 : 0.95,
+                    }}
+                    aria-label="Generar / ver video de preparación"
+                  >
+                    {isGenerating ? (
+                      <div className="w-3.5 h-3.5 md:w-4 md:h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    )}
+                  </motion.button>
+                </Tooltip>
 
-                <motion.button
-                  type="button"
-                  onClick={handleFlipCard}
-                  className="p-1.5 md:p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors"
-                  whileHover={{ scale: 1.1, rotate: -180 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Volver a la receta"
-                >
-                  <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
-                </motion.button>
+                <Tooltip content="Volver a la receta" colorClass="bg-gray-900 text-white dark:bg-gray-200 dark:text-gray-800">
+                  <motion.button
+                    type="button"
+                    onClick={handleFlipCard}
+                    className="p-1.5 md:p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                    whileHover={{ scale: 1.1, rotate: -180 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Volver a la receta"
+                  >
+                    <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
+                  </motion.button>
+                </Tooltip>
               </div>
             </div>
 
