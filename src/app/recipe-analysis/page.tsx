@@ -8,6 +8,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { useFavoriteRecipes } from "@/hooks/useFavoriteRecipes";
 import { useTempMessage } from "@/hooks/useTempMessage";
 import { useTTS } from "@/hooks/useTTS";
+import { useStepVisualization } from "@/hooks/useStepVisualization";
 import { useTheme } from "@/contexts/ThemeContext";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -58,6 +59,7 @@ export default function RecipeAnalysisPage() {
   const tts = useTTS();
   const { toggleFavorite, isFavorite } = useFavoriteRecipes();
   const { tempMessage, tempMessageType, showError, showSuccess } = useTempMessage();
+  const { stepImages, loadingSteps, generateStepImage } = useStepVisualization();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Detectar si es móvil
@@ -277,6 +279,15 @@ export default function RecipeAnalysisPage() {
   };
 
   /**
+   * Genera las imágenes del paso a paso
+   */
+  const handleGenerateSteps = () => {
+    if (!analysis || !analysis.pasos) return;
+    // Usamos un ID único para el análisis
+    generateStepImage("analysis", analysis.pasos);
+  };
+
+  /**
    * Maneja el toggle de favoritos
    */
   const handleToggleFavorite = async () => {
@@ -457,6 +468,9 @@ export default function RecipeAnalysisPage() {
                         onToggleFavorite={handleToggleFavorite}
                         showSuccess={showSuccess}
                         showError={showError}
+                        stepImages={stepImages["analysis"] || []}
+                        loadingSteps={!!loadingSteps["analysis"]}
+                        onGenerateSteps={handleGenerateSteps}
                       />
                     ) : null}
                   </motion.div>
