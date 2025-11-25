@@ -27,6 +27,10 @@ interface IngredientFormProps {
   setVoiceTranscription: (value: string) => void;
   isVoiceFieldActive: boolean;
   setIsVoiceFieldActive: (value: boolean) => void;
+  useOnlyVoiceIngredients: boolean;
+  setUseOnlyVoiceIngredients: (value: boolean) => void;
+  hasManualIngredients: boolean;
+  hasImageIngredients: boolean;
   showImageChips: boolean;
   ingredientsFromImage: string[];
   setIngredientsFromImage: (items: string[]) => void;
@@ -75,6 +79,10 @@ export default function IngredientForm({
   setVoiceTranscription,
   isVoiceFieldActive,
   setIsVoiceFieldActive,
+  useOnlyVoiceIngredients,
+  setUseOnlyVoiceIngredients,
+  hasManualIngredients,
+  hasImageIngredients,
   showImageChips,
   ingredientsFromImage,
   setIngredientsFromImage,
@@ -370,7 +378,7 @@ export default function IngredientForm({
 
       {/* Campo de voz */}
       {isVoiceFieldActive ? (
-        <div>
+        <div className="space-y-3">
           <div className="flex items-start gap-2">
             <input
               type="text"
@@ -385,6 +393,7 @@ export default function IngredientForm({
               onClick={() => {
                 setVoiceTranscription("");
                 setIsVoiceFieldActive(false);
+                setUseOnlyVoiceIngredients(false);
               }}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               aria-label="Cerrar campo de voz"
@@ -392,8 +401,63 @@ export default function IngredientForm({
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Este campo solo aparece tras usar el micrófono. Edita si la transcripción no es precisa.
+          
+          {/* Selector de fuente cuando hay múltiples ingredientes */}
+          {(hasManualIngredients || hasImageIngredients) && voiceTranscription.trim() !== "" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-sm">
+                  Tienes múltiples fuentes de ingredientes
+                </h4>
+              </div>
+              
+              <p className="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                Elige qué ingredientes quieres usar para buscar recetas:
+              </p>
+              
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="ingredientSource"
+                    checked={!useOnlyVoiceIngredients}
+                    onChange={() => setUseOnlyVoiceIngredients(false)}
+                    className="w-4 h-4 text-blue-600 border-blue-300 focus:ring-blue-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-200 transition-colors">
+                    <strong>Combinar todos:</strong> Ingredientes manuales{hasImageIngredients ? ", por foto" : ""} y por voz
+                  </span>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="ingredientSource"
+                    checked={useOnlyVoiceIngredients}
+                    onChange={() => setUseOnlyVoiceIngredients(true)}
+                    className="w-4 h-4 text-blue-600 border-blue-300 focus:ring-blue-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-200 transition-colors">
+                    <strong>Solo por voz:</strong> Usar únicamente los ingredientes que dijiste
+                  </span>
+                </label>
+              </div>
+              
+              <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  <strong>Ingredientes por voz:</strong> {voiceTranscription || "(ninguno)"}
+                </p>
+              </div>
+            </motion.div>
+          )}
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Este campo aparece tras usar el micrófono. Edita si la transcripción no es precisa.
           </p>
         </div>
       ) : (
@@ -405,7 +469,13 @@ export default function IngredientForm({
             onTranscriptionReady={(text) => {
               const cleanText = text.trim();
               setVoiceTranscription(cleanText);
-              if (cleanText !== "") setIsVoiceFieldActive(true);
+              if (cleanText !== "") {
+                setIsVoiceFieldActive(true);
+                // Si hay otros ingredientes y se usa voz, preseleccionar "solo voz"
+                if ((hasManualIngredients || hasImageIngredients) && cleanText !== "") {
+                  setUseOnlyVoiceIngredients(true);
+                }
+              }
             }}
           />
         </div>
@@ -450,7 +520,10 @@ export default function IngredientForm({
           ) : (
             <>
               <Search className="w-4 h-4" />
-              Buscar recetas
+              {useOnlyVoiceIngredients && voiceTranscription.trim() !== "" 
+                ? "Buscar con ingredientes por voz" 
+                : "Buscar recetas"
+              }
             </>
           )}
         </motion.button>
