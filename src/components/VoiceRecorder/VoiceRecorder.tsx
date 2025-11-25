@@ -37,6 +37,7 @@ export default function VoiceRecorder({ onTranscriptionReady }: VoiceRecorderPro
 
   return (
     <motion.button
+      type="button"
       onClick={isRecording ? stopRecording : startRecording}
       className={`
         p-2 rounded-full flex items-center justify-center cursor-pointer

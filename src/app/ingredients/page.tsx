@@ -60,6 +60,7 @@ export default function IngredientsPage() {
   const [voiceTranscription, setVoiceTranscription] = useState<string>("");
   const [isVoiceFieldActive, setIsVoiceFieldActive] = useState(false);
   const [currentTTSIndex, setCurrentTTSIndex] = useState<number | null>(null);
+  const [useOnlyVoiceIngredients, setUseOnlyVoiceIngredients] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1150);
@@ -95,6 +96,7 @@ export default function IngredientsPage() {
 
   /**
    * Busca recetas combinando ingredientes manuales y de voz
+   * Si useOnlyVoiceIngredients es true, usa solo la transcripción de voz
    * Detiene audio TTS antes de buscar
    */
   const handleSearchRecipes = async (e: React.FormEvent) => {
@@ -102,8 +104,11 @@ export default function IngredientsPage() {
     tts.stop();
     setCurrentTTSIndex(null);
 
+    // Si el usuario activó "solo voz", envía lista vacía de ingredientes manuales
+    const ingredientsToUse = useOnlyVoiceIngredients ? [] : ingredients.ingredients;
+    
     await recipeSearch.searchRecipes(
-      ingredients.ingredients,
+      ingredientsToUse,
       voiceTranscription,
       userPreferences,
       showError
@@ -119,6 +124,7 @@ export default function IngredientsPage() {
     recipeSearch.resetSearch();
     setVoiceTranscription("");
     setIsVoiceFieldActive(false);
+    setUseOnlyVoiceIngredients(false);
     tts.stop();
     setCurrentTTSIndex(null);
     imageProcessing.resetImages();
@@ -278,6 +284,10 @@ export default function IngredientsPage() {
                       setVoiceTranscription={setVoiceTranscription}
                       isVoiceFieldActive={isVoiceFieldActive}
                       setIsVoiceFieldActive={setIsVoiceFieldActive}
+                      useOnlyVoiceIngredients={useOnlyVoiceIngredients}
+                      setUseOnlyVoiceIngredients={setUseOnlyVoiceIngredients}
+                      hasManualIngredients={ingredients.ingredients.some(ing => ing.name.trim() !== "")}
+                      hasImageIngredients={imageProcessing.showImageChips && imageProcessing.ingredientsFromImage.length > 0}
                       showImageChips={imageProcessing.showImageChips}
                       ingredientsFromImage={imageProcessing.ingredientsFromImage}
                       setIngredientsFromImage={imageProcessing.setIngredientsFromImage}
