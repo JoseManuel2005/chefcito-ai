@@ -204,7 +204,7 @@ export default function ImageUploadInput({
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
-        capture="environment"
+        // capture="environment"
       />
       {/* Animaciones utilitarias */}
       <style>{`

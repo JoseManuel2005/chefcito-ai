@@ -171,7 +171,7 @@ export default function RecipeImageUploadInput({
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
-        capture="environment"
+        // capture="environment"
       />
       {/* Animaciones utilitarias */}
       <style>{`

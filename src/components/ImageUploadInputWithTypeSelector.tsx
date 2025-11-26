@@ -196,7 +196,7 @@ export default function ImageUploadInputWithTypeSelector({
           accept="image/*"
           onChange={handleFileChange}
           className="hidden"
-          capture="environment"
+          // capture="environment"
         />
       </div>
     );

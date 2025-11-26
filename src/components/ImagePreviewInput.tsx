@@ -89,7 +89,7 @@ export default function ImagePreviewInput({
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
-        capture="environment"
+        // capture="environment"
       />
     </div>
   );
